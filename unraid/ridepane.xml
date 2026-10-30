@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Container version="2">
+  <Name>Ridepane</Name>
+  <Repository>ghcr.io/spikked27/ridepane:latest</Repository>
+  <Registry>https://ghcr.io/spikked27/ridepane</Registry>
+  <Network>bridge</Network>
+  <Shell>sh</Shell>
+  <Privileged>false</Privileged>
+  <Support>https://github.com/spikked27/ridepane/issues</Support>
+  <Project>https://spikked27.github.io/ridepane/</Project>
+  <Overview>Private passenger media for a Tesla browser. Browse Plex or play a YouTube link, with phone QR pairing and quality settings.</Overview>
+  <Category>MediaApp:Video</Category>
+  <WebUI>http://[IP]:[PORT:8080]/</WebUI>
+  <TemplateURL>https://raw.githubusercontent.com/spikked27/ridepane/main/unraid/ridepane.xml</TemplateURL>
+  <Icon>https://raw.githubusercontent.com/spikked27/ridepane/main/public/brand/icon-256.png</Icon>
+  <Config Name="Web UI port" Target="8080" Default="8080" Mode="tcp" Description="Host port for the Ridepane web interface." Type="Port" Display="always" Required="true" Mask="false">8080</Config>
+  <Config Name="App password" Target="APP_PASSWORD" Default="" Mode="" Description="A unique password of at least 12 characters. Enter it once on your phone to pair the car." Type="Variable" Display="always" Required="true" Mask="true" />
+  <Config Name="Plex URL" Target="PLEX_URL" Default="http://192.168.1.100:32400" Mode="" Description="Plex server address reachable from this container on your LAN." Type="Variable" Display="always" Required="true" Mask="false" />
+  <Config Name="Plex token" Target="PLEX_TOKEN" Default="" Mode="" Description="Plex authentication token for browsing your library." Type="Variable" Display="always" Required="true" Mask="true" />
+  <Config Name="Public URL" Target="PUBLIC_URL" Default="" Mode="" Description="External HTTPS URL used in the car. Leave blank for LAN-only testing." Type="Variable" Display="always" Required="false" Mask="false" />
+</Container>

@@ -1,0 +1,8 @@
+.env
+.git
+.github
+docs
+node_modules
+*.test.js
+*.zip
+tmp
