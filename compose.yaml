@@ -4,6 +4,14 @@ services:
     container_name: ridepane
     restart: unless-stopped
     shm_size: "1gb"
+    mem_limit: 6g
+    cpus: 4
+    pids_limit: 1024
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "3"
     ports:
       - "8080:8080"
     volumes:

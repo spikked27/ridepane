@@ -6,7 +6,7 @@
   <Network>ridepane-desktop</Network>
   <Shell>sh</Shell>
   <Privileged>false</Privileged>
-  <ExtraParams>--shm-size=1g</ExtraParams>
+  <ExtraParams>--shm-size=1g --memory=6g --cpus=4 --pids-limit=1024 --log-opt max-size=50m --log-opt max-file=3</ExtraParams>
   <Support>https://github.com/spikked27/ridepane/issues</Support>
   <Project>https://spikked27.github.io/ridepane/</Project>
   <Overview>Private passenger media for a Tesla browser. One container serves Ridepane, Plex playback, and a signed-in full YouTube browser.</Overview>

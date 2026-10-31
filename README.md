@@ -30,6 +30,8 @@ On your LAN, open `http://<unraid-address>:8080`. Browse Plex and play a title t
 
 The Ridepane container needs outbound access to Plex's local address and to YouTube. Plex itself does not need a separate public port for Ridepane. The car needs internet through Premium Connectivity, Wi-Fi, or a phone hotspot. A rear touchscreen, if equipped, can use Tesla's supported Theater video instead.
 
+The Compose file and Unraid template cap Ridepane at 6 GiB of RAM, four CPU cores, and 1024 processes or threads. Docker rotates its logs at three 50 MB files. The image health check covers both the app and the internal browser; `unless-stopped` restarts the container if it exits. An unhealthy status alone does not trigger a Docker restart. The persistent Chromium profile under `/config` is separate from these limits and should be included in normal appdata monitoring.
+
 ## Phone pairing
 
 The car's sign-in screen shows a QR code. Scan it with your phone, enter the app password on your phone, and tap **Approve this screen**. The car signs in automatically. Its cookie lasts six months and survives container restarts as long as the app password stays the same. If your phone is already signed in, later pairings need only one approval tap. A direct password field remains available on the car as a fallback. Pairing codes expire after ten minutes.
