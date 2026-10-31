@@ -50,6 +50,9 @@ test('HTTP flow authenticates, browses Plex, and creates bounded playback sessio
     response = await fetch(base + '/brand/icon.svg');
     assert.equal(response.status, 200);
     assert.match(await response.text(), /Ridepane icon/);
+    response = await fetch(base + '/');
+    assert.equal(response.status, 200);
+    assert.match(await response.text(), /id="audio-delay"/);
     response = await fetch(base + '/desktop/');
     assert.equal(response.status, 401);
     response = await fetch(base + '/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password: 'testing-password' }) });

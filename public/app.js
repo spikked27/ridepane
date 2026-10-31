@@ -1,5 +1,5 @@
 const $ = id => document.getElementById(id);
-const state = { mode: 'plex', history: [], page: 0, section: null, player: null, session: null, audioMode: 'separate', soundOn: false, stopped: false, pair: null, pairTimer: null, phoneAuthed: false };
+const state = { mode: 'plex', history: [], page: 0, section: null, player: null, session: null, audioMode: 'separate', soundOn: false, delayContext: null, delayNode: null, combinedDelayNode: null, stopped: false, pair: null, pairTimer: null, phoneAuthed: false };
 
 async function api(path, options = {}) {
   const response = await fetch(path, { ...options, headers: { 'Content-Type': 'application/json', ...(options.headers || {}) } });
@@ -142,11 +142,41 @@ async function goBack() {
 
 function stopLocal() {
   state.stopped = true;
+  state.combinedDelayNode?.disconnect(); state.combinedDelayNode = null;
   state.player?.destroy(); state.player = null;
   $('audio').pause(); $('audio').removeAttribute('src'); $('audio').load();
   state.soundOn = false;
   state.session = null;
   show($('player'), false); show($('browse'), true);
+}
+async function setAudioDelay(milliseconds) {
+  const seconds = milliseconds / 1000;
+  if (state.audioMode === 'combined') {
+    const output = state.player?.audioOut;
+    if (!output) throw new Error('Web Audio is unavailable for this sound mode.');
+    if (!state.combinedDelayNode) {
+      const node = output.context.createDelay(1.5);
+      output.gain.disconnect();
+      output.gain.connect(node);
+      node.connect(output.context.destination);
+      state.combinedDelayNode = node;
+    }
+    state.combinedDelayNode.delayTime.setTargetAtTime(seconds, output.context.currentTime, 0.01);
+    await output.context.resume();
+    return;
+  }
+  if (!state.delayContext) {
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContextClass) throw new Error('This browser cannot delay audio.');
+    const context = new AudioContextClass();
+    const node = context.createDelay(1.5);
+    node.connect(context.destination);
+    context.createMediaElementSource($('audio')).connect(node);
+    state.delayContext = context;
+    state.delayNode = node;
+  }
+  state.delayNode.delayTime.setTargetAtTime(seconds, state.delayContext.currentTime, 0.01);
+  await state.delayContext.resume();
 }
 async function startCombinedSound() {
   const output = state.player?.audioOut;
@@ -168,6 +198,8 @@ async function play(payload, title) {
     const data = await api('/api/play', { method: 'POST', body: JSON.stringify(payload) });
     $('browse-status').textContent = '';
     state.session = data.id; state.audioMode = data.audioMode; state.soundOn = false; state.stopped = false;
+    $('audio-delay').value = '0'; $('audio-delay-value').textContent = '0 ms';
+    if (state.delayNode) state.delayNode.delayTime.value = 0;
     $('player-title').textContent = title;
     $('screen-status').textContent = 'Connecting to server…';
     show($('screen-status'), true); show($('browse'), false); show($('player'), true);
@@ -202,6 +234,7 @@ async function play(payload, title) {
       return;
     }
     audio.src = `/api/session/${data.id}/audio`;
+    if (state.delayContext) await state.delayContext.resume();
     $('player-message').textContent = 'Starting audio…';
     await audio.play().then(() => { $('audio-button').textContent = 'Pause audio'; }).catch(() => {
       $('player-message').textContent = 'Tap Start audio to begin playback.';
@@ -279,8 +312,14 @@ $('audio-button').addEventListener('click', async () => {
   }
   const audio = $('audio');
   if (audio.paused) {
-    try { await audio.play(); $('audio-button').textContent = 'Pause audio'; } catch (err) { $('player-message').textContent = err.message; }
+    try { if (state.delayContext) await state.delayContext.resume(); await audio.play(); $('audio-button').textContent = 'Pause audio'; } catch (err) { $('player-message').textContent = err.message; }
   } else { audio.pause(); $('audio-button').textContent = 'Start audio'; }
+});
+$('audio-delay').addEventListener('input', async event => {
+  const milliseconds = Number(event.target.value);
+  $('audio-delay-value').textContent = `${milliseconds} ms`;
+  try { await setAudioDelay(milliseconds); }
+  catch (err) { $('player-message').textContent = err.message; }
 });
 
 const pairCode = new URLSearchParams(location.search).get('pair');

@@ -90,6 +90,7 @@
         <div class="player-bar"><div><p class="eyebrow">NOW PLAYING</p><h2 id="player-title">Video</h2></div><button id="stop" type="button" class="secondary">Close player</button></div>
         <div class="canvas-wrap"><canvas id="screen" width="1280" height="720" aria-label="Video picture"></canvas><div id="screen-status" class="screen-status">Connecting to server…</div></div>
         <div class="player-controls"><button id="audio-button" type="button">Start audio</button><span id="player-message" class="muted" role="status">Connecting…</span></div>
+        <div class="audio-delay-row"><label for="audio-delay">Delay sound <output id="audio-delay-value" for="audio-delay">0 ms</output></label><input id="audio-delay" type="range" min="0" max="1500" step="50" value="0"><span>Increase if voices sound before lips move.</span></div>
         <audio id="audio" controls></audio>
       </section>
       <footer>Ridepane is intended for a passenger. The driver must keep attention on the road.</footer>
