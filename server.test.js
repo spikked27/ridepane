@@ -13,9 +13,20 @@ test('HTTP flow authenticates, browses Plex, and creates bounded playback sessio
     else { res.statusCode = 404; res.end('{}'); }
   });
   await new Promise(resolve => plex.listen(0, '127.0.0.1', resolve));
+  const desktop = http.createServer((req, res) => {
+    assert.equal(req.url, '/desktop/');
+    assert.equal(req.headers.cookie || '', '');
+    res.end('Remote browser');
+  });
+  desktop.on('upgrade', (req, socket) => {
+    assert.equal(req.url, '/desktop/');
+    assert.equal(req.headers.cookie || '', '');
+    socket.end('HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\n\r\nhello');
+  });
+  await new Promise(resolve => desktop.listen(0, '127.0.0.1', resolve));
   const child = spawn(process.execPath, ['server.js'], {
     cwd: import.meta.dirname,
-    env: { ...process.env, PORT: '0', APP_PASSWORD: 'testing-password', PLEX_URL: `http://127.0.0.1:${plex.address().port}`, PLEX_TOKEN: 'test-token' },
+    env: { ...process.env, PORT: '0', APP_PASSWORD: 'testing-password', PLEX_URL: `http://127.0.0.1:${plex.address().port}`, PLEX_TOKEN: 'test-token', DESKTOP_URL: `http://127.0.0.1:${desktop.address().port}` },
     stdio: ['ignore', 'pipe', 'pipe']
   });
   let output = '';
@@ -37,10 +48,28 @@ test('HTTP flow authenticates, browses Plex, and creates bounded playback sessio
     response = await fetch(base + '/brand/icon.svg');
     assert.equal(response.status, 200);
     assert.match(await response.text(), /Ridepane icon/);
+    response = await fetch(base + '/desktop/');
+    assert.equal(response.status, 401);
     response = await fetch(base + '/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password: 'testing-password' }) });
     assert.equal(response.status, 200);
     const cookie = response.headers.get('set-cookie').split(';')[0];
     const headers = { Cookie: cookie };
+    response = await fetch(base + '/desktop/', { headers });
+    assert.equal(response.status, 200);
+    assert.equal(await response.text(), 'Remote browser');
+    response = await fetch(base + '/api/me', { headers });
+    assert.equal((await response.json()).desktop, true);
+    const desktopUpgrade = await new Promise((resolve, reject) => {
+      const request = http.request(base + '/desktop/', { headers: { ...headers, Connection: 'Upgrade', Upgrade: 'websocket', Origin: base, 'Sec-WebSocket-Key': 'dGVzdA==', 'Sec-WebSocket-Version': '13' } });
+      request.on('upgrade', (upgraded, socket, head) => {
+        if (head.length) { socket.destroy(); resolve({ status: upgraded.statusCode, head: head.toString() }); }
+        else socket.once('data', chunk => { socket.destroy(); resolve({ status: upgraded.statusCode, head: chunk.toString() }); });
+      });
+      request.on('error', reject);
+      request.end();
+    });
+    assert.equal(desktopUpgrade.status, 101);
+    assert.equal(desktopUpgrade.head, 'hello');
     response = await fetch(base + '/api/plex/sections', { headers });
     assert.deepEqual((await response.json()).items.map(x => x.title), ['Movies']);
     response = await fetch(base + '/api/plex/items?section=1', { headers });
@@ -70,5 +99,6 @@ test('HTTP flow authenticates, browses Plex, and creates bounded playback sessio
   } finally {
     child.kill();
     plex.close();
+    desktop.close();
   }
 });

@@ -14,6 +14,7 @@ function openApp() {
   clearTimeout(state.pairTimer);
   state.pair = null;
   show($('login'), false); show($('pair-phone'), false); show($('app'), true);
+  api('/api/me').then(me => show($('desktop-tab'), !!me.desktop)).catch(() => {});
   loadSections();
 }
 async function startPairing() {
@@ -44,15 +45,20 @@ async function openPhonePair(code) {
   $('phone-code').textContent = code;
   state.phoneAuthed = await api('/api/me').then(() => true).catch(() => false);
   show($('phone-password-wrap'), !state.phoneAuthed);
+  if (state.phoneAuthed) api('/api/me').then(me => show($('desktop-phone-link'), !!me.desktop)).catch(() => {});
 }
 function setTab(mode) {
   state.mode = mode;
   show($('plex-panel'), mode === 'plex');
   show($('youtube-panel'), mode === 'youtube');
-  $('plex-tab').classList.toggle('active', mode === 'plex');
-  $('youtube-tab').classList.toggle('active', mode === 'youtube');
-  $('plex-tab').setAttribute('aria-current', mode === 'plex' ? 'page' : 'false');
-  $('youtube-tab').setAttribute('aria-current', mode === 'youtube' ? 'page' : 'false');
+  show($('desktop-panel'), mode === 'desktop');
+  for (const name of ['plex', 'youtube', 'desktop']) {
+    $(`${name}-tab`).classList.toggle('active', mode === name);
+    $(`${name}-tab`).setAttribute('aria-current', mode === name ? 'page' : 'false');
+  }
+  const frame = $('desktop-frame');
+  if (mode === 'desktop' && !frame.getAttribute('src')) frame.src = '/desktop/';
+  else if (mode !== 'desktop' && frame.getAttribute('src')) frame.removeAttribute('src');
   setError('');
 }
 
@@ -202,10 +208,13 @@ $('pair-form').addEventListener('submit', async event => {
     show($('phone-password-wrap'), false);
     $('phone-message').textContent = 'Approved. The car screen will sign in automatically.';
     $('pair-form').querySelector('button').disabled = true;
+    const me = await api('/api/me');
+    show($('desktop-phone-link'), !!me.desktop);
   } catch (err) { $('phone-message').textContent = ''; $('phone-error').textContent = err.message; }
 });
 $('plex-tab').addEventListener('click', () => setTab('plex'));
 $('youtube-tab').addEventListener('click', () => setTab('youtube'));
+$('desktop-tab').addEventListener('click', () => setTab('desktop'));
 $('sound-check').addEventListener('click', async () => {
   const result = $('sound-capability');
   const AudioContextClass = window.AudioContext || window.webkitAudioContext;

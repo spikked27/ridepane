@@ -18,4 +18,5 @@
   <Config Name="Plex URL" Target="PLEX_URL" Default="http://192.168.1.100:32400" Mode="" Description="Plex server address reachable from this container on your LAN." Type="Variable" Display="always" Required="true" Mask="false" />
   <Config Name="Plex token" Target="PLEX_TOKEN" Default="" Mode="" Description="Plex authentication token for browsing your library." Type="Variable" Display="always" Required="true" Mask="true" />
   <Config Name="Public URL" Target="PUBLIC_URL" Default="" Mode="" Description="External HTTPS URL used in the car. Leave blank for LAN-only testing." Type="Variable" Display="always" Required="false" Mask="false" />
+  <Config Name="Full YouTube browser URL" Target="DESKTOP_URL" Default="" Mode="" Description="Optional. Set to http://ridepane-browser:3000 when both containers are on a private Docker network." Type="Variable" Display="advanced" Required="false" Mask="false" />
 </Container>

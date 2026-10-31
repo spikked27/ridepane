@@ -12,6 +12,7 @@ const port = Number(process.env.PORT || 8080);
 const password = process.env.APP_PASSWORD;
 const plexUrl = process.env.PLEX_URL;
 const plexToken = process.env.PLEX_TOKEN;
+const desktopBase = process.env.DESKTOP_URL ? new URL(process.env.DESKTOP_URL) : null;
 const loginAttempts = new Map();
 const pairs = new Map();
 let active = null;
@@ -24,6 +25,7 @@ if (!password || password.length < 12 || !plexUrl || !plexToken) {
 const sessionKey = crypto.scryptSync(password, 'ridepane-session-v1', 32);
 const plexBase = new URL(plexUrl);
 if (!['http:', 'https:'].includes(plexBase.protocol)) throw new Error('PLEX_URL must use HTTP or HTTPS.');
+if (desktopBase && desktopBase.protocol !== 'http:') throw new Error('DESKTOP_URL must use HTTP on a private Docker network.');
 
 function cookie(req) {
   return (req.headers.cookie || '').split(';').map(x => x.trim()).find(x => x.startsWith('ridepane='))?.slice(9);
@@ -68,6 +70,40 @@ function sameOrigin(req) {
   if (!req.headers.origin) return true;
   const origin = new URL(req.headers.origin);
   return origin.host === req.headers.host && ['http:', 'https:'].includes(origin.protocol);
+}
+function desktopHeaders(req) {
+  const headers = { ...req.headers, host: desktopBase.host };
+  if (headers.cookie) headers.cookie = headers.cookie.split(';').map(value => value.trim()).filter(value => !value.startsWith('ridepane=')).join('; ');
+  delete headers.authorization;
+  delete headers['proxy-authorization'];
+  return headers;
+}
+function desktopTarget(req) {
+  const url = new URL(req.url, 'http://localhost');
+  return new URL(url.pathname + url.search, desktopBase);
+}
+function proxyDesktop(req, res) {
+  const upstream = http.request(desktopTarget(req), { method: req.method, headers: desktopHeaders(req) }, response => {
+    res.writeHead(response.statusCode, response.headers);
+    response.pipe(res);
+  });
+  upstream.on('error', () => { if (!res.headersSent) error(res, 502, 'YouTube desktop is unavailable.'); else res.destroy(); });
+  req.pipe(upstream);
+}
+function proxyDesktopSocket(req, socket, head) {
+  const upstream = http.request(desktopTarget(req), { headers: desktopHeaders(req) });
+  upstream.on('upgrade', (response, remote, remoteHead) => {
+    const headers = Object.entries(response.headers).map(([name, value]) => `${name}: ${value}\r\n`).join('');
+    socket.write(`HTTP/1.1 101 Switching Protocols\r\n${headers}\r\n`);
+    if (head.length) remote.write(head);
+    if (remoteHead.length) socket.write(remoteHead);
+    remote.pipe(socket).pipe(remote);
+    socket.on('error', () => remote.destroy());
+    remote.on('error', () => socket.destroy());
+  });
+  upstream.on('response', () => socket.end('HTTP/1.1 502 Bad Gateway\r\nConnection: close\r\n\r\n'));
+  upstream.on('error', () => socket.end('HTTP/1.1 502 Bad Gateway\r\nConnection: close\r\n\r\n'));
+  upstream.end();
 }
 async function plexGet(endpoint) {
   const url = new URL(endpoint, plexBase);
@@ -183,6 +219,21 @@ const server = http.createServer(async (req, res) => {
   try {
     const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
     if (req.method === 'GET' && url.pathname === '/healthz') return json(res, 200, { ok: true });
+    if (url.pathname === '/desktop' || url.pathname.startsWith('/desktop/')) {
+      if (!authed(req)) return error(res, 401, 'Sign in to Ridepane.');
+      if (!desktopBase) return error(res, 404, 'YouTube desktop is not installed.');
+      if (url.pathname === '/desktop') { res.writeHead(302, { Location: '/desktop/' }); return res.end(); }
+      if (req.method === 'GET' && ['/desktop/icon.png', '/desktop/icon-512.png'].includes(url.pathname)) {
+        const file = url.pathname.endsWith('512.png') ? 'icon-512.png' : 'icon-256.png';
+        const bytes = await fs.readFile(path.join(root, 'public', 'brand', file));
+        res.writeHead(200, { 'Content-Type': 'image/png', 'Cache-Control': 'public, max-age=86400', 'X-Content-Type-Options': 'nosniff' });
+        return res.end(bytes);
+      }
+      if (req.method === 'GET' && url.pathname === '/desktop/manifest.json') {
+        return json(res, 200, { name: 'Ridepane Full YouTube', short_name: 'Ridepane', start_url: '/desktop/', display: 'standalone', icons: [{ src: '/desktop/icon.png', sizes: '256x256', type: 'image/png' }, { src: '/desktop/icon-512.png', sizes: '512x512', type: 'image/png' }] });
+      }
+      return proxyDesktop(req, res);
+    }
     if (req.method === 'GET' && staticFiles.has(url.pathname)) {
       const [file, type] = staticFiles.get(url.pathname);
       const bytes = await fs.readFile(path.join(root, 'public', file));
@@ -238,7 +289,7 @@ const server = http.createServer(async (req, res) => {
       pair.approved = true;
       return json(res, 200, { ok: true });
     }
-    if (req.method === 'GET' && url.pathname === '/api/me') return json(res, 200, { ok: true, plex: true });
+    if (req.method === 'GET' && url.pathname === '/api/me') return json(res, 200, { ok: true, plex: true, desktop: !!desktopBase });
     if (req.method === 'GET' && url.pathname === '/api/plex/sections') {
       const data = await plexGet('/library/sections/all');
       return json(res, 200, { items: (data.Directory || []).filter(x => ['movie', 'show', 'other'].includes(x.type)).map(x => ({ id: String(x.key), title: x.title, type: x.type })) });
@@ -298,9 +349,13 @@ const server = http.createServer(async (req, res) => {
   }
 });
 
-server.on('upgrade', (req, socket) => {
+server.on('upgrade', (req, socket, head) => {
   try {
     const url = new URL(req.url, 'http://localhost');
+    if (url.pathname.startsWith('/desktop/')) {
+      if (!desktopBase || !authed(req) || !sameOrigin(req) || req.headers.upgrade?.toLowerCase() !== 'websocket') throw new Error('Unauthorized');
+      return proxyDesktopSocket(req, socket, head);
+    }
     const id = url.pathname.match(/^\/ws\/([a-f0-9-]+)$/)?.[1];
     const key = req.headers['sec-websocket-key'];
     if (!authed(req) || !active || active.id !== id || active.socket || !key || req.headers.upgrade?.toLowerCase() !== 'websocket') throw new Error('Unauthorized');
