@@ -32,6 +32,10 @@ The Ridepane container needs outbound access to Plex's local address and to YouT
 
 The Compose file and Unraid template cap Ridepane at 6 GiB of RAM, four CPU cores, and 1024 processes or threads. Docker rotates its logs at three 50 MB files. The image health check covers both the app and the internal browser; `unless-stopped` restarts the container if it exits. An unhealthy status alone does not trigger a Docker restart. The persistent Chromium profile under `/config` is separate from these limits and should be included in normal appdata monitoring.
 
+## In-car checks
+
+Open **Car checks** in Ridepane to measure the actual browser-to-Unraid route and inspect Tesla browser features. The connection check transfers 8 MiB of random test data and reports its speed and median round-trip time. The cache check stores 64 MiB of generated test bytes in the car browser's IndexedDB; it does not download Plex media. Close and reopen the car browser, then use **Verify saved cache** to see whether those bytes survived. **Clear test cache** removes them. A passed 64 MiB check is only an initial feasibility result, not proof that the browser can retain a whole movie. See [TESTING.md](TESTING.md) for the short car test sequence and what results to record.
+
 ## Phone pairing
 
 The car's sign-in screen shows a QR code. Scan it with your phone, enter the app password on your phone, and tap **Approve this screen**. The car signs in automatically. Its cookie lasts six months and survives container restarts as long as the app password stays the same. If your phone is already signed in, later pairings need only one approval tap. A direct password field remains available on the car as a fallback. Pairing codes expire after ten minutes.

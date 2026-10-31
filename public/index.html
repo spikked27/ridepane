@@ -6,9 +6,10 @@
   <meta name="theme-color" content="#08141c">
   <title>Ridepane · Passenger media</title>
   <link rel="icon" type="image/svg+xml" href="/brand/icon.svg">
-  <link rel="stylesheet" href="/style.css?v=0.5.0">
+  <link rel="stylesheet" href="/style.css?v=0.6.0">
   <script src="/vendor/jsmpeg.min.js" defer></script>
-  <script src="/app.js?v=0.5.0" defer></script>
+  <script src="/app.js?v=0.6.0" defer></script>
+  <script src="/diagnostics.js?v=0.6.0" defer></script>
 </head>
 <body>
   <main>
@@ -52,6 +53,7 @@
           <button id="plex-tab" class="tab active" type="button" aria-current="page">Plex library</button>
           <button id="youtube-tab" class="tab" type="button">YouTube link</button>
           <a id="desktop-tab" class="tab hidden" href="/desktop/" title="Open YouTube using the full browser window">Full YouTube ↗</a>
+          <button id="diagnostics-tab" class="tab" type="button">Car checks</button>
         </nav>
         <div class="quality-row"><label for="quality">Picture quality</label><select id="quality"><option value="balanced">Balanced · 540p / 30 fps</option><option value="high" selected>High · 720p / 30 fps</option><option value="maximum">Maximum · 1080p / 30 fps</option></select><span>Higher settings use more mobile data and Unraid CPU.</span></div>
         <div class="sound-row"><span>Sound: 320 kbps stereo</span><button id="sound-check" class="secondary" type="button">Check browser channels</button><span id="sound-capability" role="status">The car may expose fewer audio channels than it has speakers.</span></div>
@@ -64,6 +66,19 @@
           <h2>Play a YouTube video</h2>
           <p class="muted">Paste a video link. Some live, paid, or restricted videos may not play.</p>
           <form id="youtube-form" class="youtube-form"><label for="youtube-url">Video URL</label><div class="url-row"><input id="youtube-url" type="url" placeholder="https://youtube.com/watch?v=…" required><button type="submit">Watch</button></div></form>
+        </section>
+        <section id="diagnostics-panel" class="panel hidden" aria-label="Car checks">
+          <h2>Check the car connection and browser</h2>
+          <p class="muted">Use these buttons on the Tesla screen. Take a photo of the results to share later. The speed check downloads 8 MB from your Unraid server; the cache check temporarily saves 64 MB in this browser.</p>
+          <div class="diagnostic-actions">
+            <button id="diagnostics-browser" class="secondary" type="button">Check browser</button>
+            <button id="diagnostics-speed" class="secondary" type="button">Check connection</button>
+            <button id="diagnostics-cache-write" class="secondary" type="button">Save 64 MB test cache</button>
+            <button id="diagnostics-cache-verify" class="secondary" type="button">Verify saved cache</button>
+            <button id="diagnostics-cache-clear" class="secondary" type="button">Clear test cache</button>
+          </div>
+          <p id="diagnostics-status" class="muted" role="status">Run the browser and connection checks, then save a test cache. Close and reopen the Tesla browser before verifying the cache.</p>
+          <pre id="diagnostics-report" class="diagnostics-report" aria-live="polite">No results yet.</pre>
         </section>
         <p id="browse-error" class="error" role="alert"></p>
         <p id="browse-status" class="muted" role="status"></p>

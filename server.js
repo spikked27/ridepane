@@ -15,6 +15,9 @@ const plexToken = process.env.PLEX_TOKEN;
 const desktopBase = process.env.DESKTOP_URL ? new URL(process.env.DESKTOP_URL) : null;
 const loginAttempts = new Map();
 const pairs = new Map();
+const diagnosticChunk = crypto.randomBytes(65536);
+const diagnosticBytes = 8 * 1024 * 1024;
+let activeDiagnosticTransfers = 0;
 let active = null;
 let lastSession = null;
 
@@ -207,6 +210,7 @@ function startSession(session) {
 const staticFiles = new Map([
   ['/', ['index.html', 'text/html; charset=utf-8']],
   ['/app.js', ['app.js', 'text/javascript; charset=utf-8']],
+  ['/diagnostics.js', ['diagnostics.js', 'text/javascript; charset=utf-8']],
   ['/vendor/jsmpeg.min.js', ['vendor/jsmpeg.min.js', 'text/javascript; charset=utf-8']],
   ['/vendor/LICENSE-jsmpeg.txt', ['vendor/LICENSE-jsmpeg.txt', 'text/plain; charset=utf-8']],
   ['/style.css', ['style.css', 'text/css; charset=utf-8']],
@@ -290,6 +294,30 @@ const server = http.createServer(async (req, res) => {
       return json(res, 200, { ok: true });
     }
     if (req.method === 'GET' && url.pathname === '/api/me') return json(res, 200, { ok: true, plex: true, desktop: !!desktopBase });
+    if (req.method === 'GET' && url.pathname === '/api/diagnostics/ping') return json(res, 200, { ok: true });
+    if (req.method === 'GET' && url.pathname === '/api/diagnostics/transfer') {
+      if (activeDiagnosticTransfers >= 2) return error(res, 429, 'Another connection test is running.');
+      activeDiagnosticTransfers++;
+      let sent = 0;
+      res.writeHead(200, {
+        'Content-Type': 'application/octet-stream',
+        'Content-Length': diagnosticBytes,
+        'Cache-Control': 'no-store, no-transform',
+        'X-Accel-Buffering': 'no',
+        'X-Content-Type-Options': 'nosniff'
+      });
+      res.on('close', () => { activeDiagnosticTransfers--; });
+      const write = () => {
+        while (!res.destroyed && sent < diagnosticBytes) {
+          sent += diagnosticChunk.length;
+          if (!res.write(diagnosticChunk)) return;
+        }
+        if (!res.destroyed) res.end();
+      };
+      res.on('drain', write);
+      write();
+      return;
+    }
     if (req.method === 'GET' && url.pathname === '/api/plex/sections') {
       const data = await plexGet('/library/sections/all');
       return json(res, 200, { items: (data.Directory || []).filter(x => ['movie', 'show', 'other'].includes(x.type)).map(x => ({ id: String(x.key), title: x.title, type: x.type })) });

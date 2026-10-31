@@ -51,7 +51,8 @@ function setTab(mode) {
   state.mode = mode;
   show($('plex-panel'), mode === 'plex');
   show($('youtube-panel'), mode === 'youtube');
-  for (const name of ['plex', 'youtube']) {
+  show($('diagnostics-panel'), mode === 'diagnostics');
+  for (const name of ['plex', 'youtube', 'diagnostics']) {
     $(`${name}-tab`).classList.toggle('active', mode === name);
     $(`${name}-tab`).setAttribute('aria-current', mode === name ? 'page' : 'false');
   }
@@ -209,6 +210,7 @@ $('pair-form').addEventListener('submit', async event => {
 });
 $('plex-tab').addEventListener('click', () => setTab('plex'));
 $('youtube-tab').addEventListener('click', () => setTab('youtube'));
+$('diagnostics-tab').addEventListener('click', () => setTab('diagnostics'));
 $('sound-check').addEventListener('click', async () => {
   const result = $('sound-capability');
   const AudioContextClass = window.AudioContext || window.webkitAudioContext;

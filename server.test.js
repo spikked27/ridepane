@@ -45,6 +45,8 @@ test('HTTP flow authenticates, browses Plex, and creates bounded playback sessio
     const base = `http://127.0.0.1:${port}`;
     let response = await fetch(base + '/api/plex/sections');
     assert.equal(response.status, 401);
+    response = await fetch(base + '/api/diagnostics/transfer');
+    assert.equal(response.status, 401);
     response = await fetch(base + '/brand/icon.svg');
     assert.equal(response.status, 200);
     assert.match(await response.text(), /Ridepane icon/);
@@ -59,6 +61,15 @@ test('HTTP flow authenticates, browses Plex, and creates bounded playback sessio
     assert.equal(await response.text(), 'Remote browser');
     response = await fetch(base + '/api/me', { headers });
     assert.equal((await response.json()).desktop, true);
+    response = await fetch(base + '/diagnostics.js');
+    assert.equal(response.status, 200);
+    assert.match(await response.text(), /ridepane-car-check-v1/);
+    response = await fetch(base + '/api/diagnostics/ping', { headers });
+    assert.deepEqual(await response.json(), { ok: true });
+    response = await fetch(base + '/api/diagnostics/transfer', { headers });
+    assert.equal(response.status, 200);
+    assert.match(response.headers.get('cache-control'), /no-store/);
+    assert.equal((await response.arrayBuffer()).byteLength, 8 * 1024 * 1024);
     const desktopUpgrade = await new Promise((resolve, reject) => {
       const request = http.request(base + '/desktop/', { headers: { ...headers, Connection: 'Upgrade', Upgrade: 'websocket', Origin: base, 'Sec-WebSocket-Key': 'dGVzdA==', 'Sec-WebSocket-Version': '13' } });
       request.on('upgrade', (upgraded, socket, head) => {

@@ -5,3 +5,4 @@
 .sound-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:12px 0;border-bottom:1px solid #24434b;color:#a5b8bd;font-size:12px}.sound-row>.secondary{padding:8px 12px;font-size:12px}.sound-row>#sound-capability{line-height:1.4}
 .tabs{overflow-x:auto;white-space:nowrap}#desktop-tab,.desktop-phone-link{display:inline-block;text-decoration:none}.desktop-phone-link{margin-top:12px}
 a:focus-visible{outline:3px solid #75e0d1;outline-offset:3px}
+.diagnostic-actions{display:flex;flex-wrap:wrap;gap:10px;margin:20px 0}.diagnostic-actions button{min-height:48px}.diagnostic-actions button:disabled{opacity:.55;cursor:wait}.diagnostics-report{white-space:pre-wrap;overflow-wrap:anywhere;background:#102a33;border:1px solid #31515c;border-radius:14px;padding:18px;color:#e7f4f2;line-height:1.6;font:13px/1.6 ui-monospace,SFMono-Regular,Consolas,monospace;min-height:100px}
