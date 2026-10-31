@@ -1,0 +1,2 @@
+#!/usr/bin/with-contenv bash
+exec s6-setuidgid abc /usr/local/bin/node /opt/ridepane/server.js

@@ -3,20 +3,25 @@
   <Name>Ridepane</Name>
   <Repository>ghcr.io/spikked27/ridepane:latest</Repository>
   <Registry>https://ghcr.io/spikked27/ridepane</Registry>
-  <Network>bridge</Network>
+  <Network>ridepane-desktop</Network>
   <Shell>sh</Shell>
   <Privileged>false</Privileged>
+  <ExtraParams>--shm-size=1g</ExtraParams>
   <Support>https://github.com/spikked27/ridepane/issues</Support>
   <Project>https://spikked27.github.io/ridepane/</Project>
-  <Overview>Private passenger media for a Tesla browser. Browse Plex or play a YouTube link, with phone QR pairing and quality settings.</Overview>
+  <Overview>Private passenger media for a Tesla browser. One container serves Ridepane, Plex playback, and a signed-in full YouTube browser.</Overview>
   <Category>MediaApp:Video</Category>
   <WebUI>http://[IP]:[PORT:8080]/</WebUI>
   <TemplateURL>https://raw.githubusercontent.com/spikked27/ridepane/main/unraid/ridepane.xml</TemplateURL>
   <Icon>https://raw.githubusercontent.com/spikked27/ridepane/main/public/brand/icon-256.png</Icon>
   <Config Name="Web UI port" Target="8080" Default="8080" Mode="tcp" Description="Host port for the Ridepane web interface." Type="Port" Display="always" Required="true" Mask="false">8080</Config>
+  <Config Name="YouTube browser profile" Target="/config" Default="/mnt/cache/appdata/ridepane-browser" Mode="rw" Description="Persistent Chromium profile containing your YouTube sign-in. Keep this path when upgrading from the two-container version." Type="Path" Display="always" Required="true" Mask="false">/mnt/cache/appdata/ridepane-browser</Config>
   <Config Name="App password" Target="APP_PASSWORD" Default="" Mode="" Description="A unique password of at least 12 characters. Enter it once on your phone to pair the car." Type="Variable" Display="always" Required="true" Mask="true" />
   <Config Name="Plex URL" Target="PLEX_URL" Default="http://192.168.1.100:32400" Mode="" Description="Plex server address reachable from this container on your LAN." Type="Variable" Display="always" Required="true" Mask="false" />
   <Config Name="Plex token" Target="PLEX_TOKEN" Default="" Mode="" Description="Plex authentication token for browsing your library." Type="Variable" Display="always" Required="true" Mask="true" />
   <Config Name="Public URL" Target="PUBLIC_URL" Default="" Mode="" Description="External HTTPS URL used in the car. Leave blank for LAN-only testing." Type="Variable" Display="always" Required="false" Mask="false" />
-  <Config Name="Full YouTube browser URL" Target="DESKTOP_URL" Default="" Mode="" Description="Optional. Set to http://ridepane-browser:3000 when both containers are on a private Docker network." Type="Variable" Display="advanced" Required="false" Mask="false" />
+  <Config Name="Browser URL" Target="DESKTOP_URL" Default="http://127.0.0.1:3000" Mode="" Description="Internal browser service in this same container." Type="Variable" Display="advanced" Required="true" Mask="false">http://127.0.0.1:3000</Config>
+  <Config Name="User ID" Target="PUID" Default="99" Mode="" Description="Unraid nobody user ID." Type="Variable" Display="advanced" Required="true" Mask="false">99</Config>
+  <Config Name="Group ID" Target="PGID" Default="100" Mode="" Description="Unraid users group ID." Type="Variable" Display="advanced" Required="true" Mask="false">100</Config>
+  <Config Name="Timezone" Target="TZ" Default="America/New_York" Mode="" Description="Browser timezone." Type="Variable" Display="advanced" Required="true" Mask="false">America/New_York</Config>
 </Container>

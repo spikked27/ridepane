@@ -20,7 +20,7 @@
       <div class="hero-copy">
         <p class="eyebrow">YOUR MEDIA, YOUR SERVER, THEIR SEAT</p>
         <h1>A better passenger screen for the road.</h1>
-        <p class="lead">Ridepane brings your Plex library and YouTube to a private page hosted on Unraid. Optional Full YouTube streams the real signed-in website from a browser on your server. Scan a code with your phone to sign the car in.</p>
+        <p class="lead">One Ridepane container brings your Plex library and the real signed-in YouTube website to a private page hosted on Unraid. Scan a code with your phone to sign the car in.</p>
         <div class="actions"><a class="button primary" href="#install">Install on Unraid</a><a class="button outline" href="https://github.com/spikked27/ridepane">View source</a></div>
         <p class="fine">The driver must keep attention on the road. Ridepane is an independent project, not affiliated with Tesla, Plex, or YouTube.</p>
       </div>
@@ -57,7 +57,7 @@
     <section id="full-youtube" class="section wrap faq">
       <p class="eyebrow">OPTIONAL · EXPERIMENTAL</p><h2>Your actual YouTube account on the car screen.</h2>
       <p>Full YouTube runs Chromium on Unraid and streams its screen to the car. You can browse the same YouTube website you use on your phone, including playlists, Likes, Watch Later, and subscriptions. On the phone pairing page, open the Full YouTube sign-in link and sign in there once. The browser profile stays on Unraid, so the car does not need your Google password. The Full YouTube entry uses the whole available Tesla browser viewport; the stream's side menu also has a fullscreen control where the client browser permits it.</p>
-      <p>For Docker Compose, set <code>DESKTOP_URL=http://ridepane-browser:3000</code> in <code>.env</code> and run <code>docker compose --profile full-youtube up -d</code>. The companion browser has no published port. Ridepane protects it with the same sign-in and proxies it through your existing HTTPS and WebSocket setup. See the <a href="https://github.com/spikked27/ridepane#full-youtube-experimental">README</a> for Unraid Docker tab setup and optional GPU access.</p>
+      <p>The app and Chromium now run in one container. For Docker Compose, run <code>docker compose up -d</code>. Only the Ridepane app port is published; it protects the internal browser with the same sign-in and proxies it through your existing HTTPS and WebSocket setup. See the <a href="https://github.com/spikked27/ridepane#full-youtube-experimental">README</a> for Unraid Docker tab setup, browser profile persistence, and optional GPU access.</p>
       <p>The remote screen defaults to H.264 at 30 fps, adaptive bitrate up to 8 Mbps, and 320 kbps stereo Opus. Resolution follows the browser viewport. It uses canvas rendering and Web Audio. Tesla browser compatibility, Google sign-in, picture quality, and audio need an in-car test. This mode has different quality controls from Ridepane's Plex and YouTube link player.</p>
     </section>
     <section id="pair" class="section pair-section wrap">

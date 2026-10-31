@@ -3,45 +3,22 @@ services:
     image: ghcr.io/spikked27/ridepane:latest
     container_name: ridepane
     restart: unless-stopped
+    shm_size: "1gb"
     ports:
       - "8080:8080"
-    healthcheck:
-      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:8080/healthz').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
+    volumes:
+      - ridepane-browser-config:/config
+    # For Intel/AMD hardware encoding, add: devices: ["/dev/dri:/dev/dri"]
     environment:
       PORT: "8080"
       APP_PASSWORD: "${APP_PASSWORD:?Set APP_PASSWORD in .env}"
       PLEX_URL: "${PLEX_URL:?Set PLEX_URL in .env}"
       PLEX_TOKEN: "${PLEX_TOKEN:?Set PLEX_TOKEN in .env}"
       PUBLIC_URL: "${PUBLIC_URL:-}"
-      DESKTOP_URL: "${DESKTOP_URL:-}"
-  ridepane-browser:
-    profiles: [full-youtube]
-    image: lscr.io/linuxserver/chromium:latest
-    container_name: ridepane-browser
-    restart: unless-stopped
-    shm_size: "1gb"
-    environment:
+      DESKTOP_URL: http://127.0.0.1:3000
       TZ: "${TZ:-America/New_York}"
       PUID: "${PUID:-99}"
       PGID: "${PGID:-100}"
-      SUBFOLDER: /desktop/
-      HARDEN_DESKTOP: "true"
-      HARDEN_OPENBOX: "true"
-      SELKIES_ENABLE_SHARING: "false"
-      SELKIES_FILE_TRANSFERS: none
       SELKIES_ALLOWED_ORIGINS: "${PUBLIC_URL:-*}"
-      SELKIES_FRAMERATE: "30"
-      SELKIES_RATE_CONTROL_MODE: cbr,crf
-      SELKIES_VIDEO_BITRATE: "8000"
-      SELKIES_VIDEO_STREAMING_MODE: "true"
-      SELKIES_AUDIO_BITRATE: "320000"
-      TITLE: Ridepane Full YouTube
-      CHROME_CLI: "--kiosk https://www.youtube.com"
-    volumes:
-      - ridepane-browser-config:/config
-    # For Intel/AMD hardware encoding, add: devices: ["/dev/dri:/dev/dri"]
 volumes:
   ridepane-browser-config:
