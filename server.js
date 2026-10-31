@@ -186,7 +186,7 @@ const server = http.createServer(async (req, res) => {
     if (req.method === 'GET' && staticFiles.has(url.pathname)) {
       const [file, type] = staticFiles.get(url.pathname);
       const bytes = await fs.readFile(path.join(root, 'public', file));
-      res.writeHead(200, { 'Content-Type': type, 'Content-Security-Policy': "default-src 'self'; connect-src 'self' ws: wss:; img-src 'self' data:; media-src 'self'; style-src 'self'; script-src 'self'", 'X-Content-Type-Options': 'nosniff' });
+      res.writeHead(200, { 'Content-Type': type, 'Cache-Control': 'no-store', 'Content-Security-Policy': "default-src 'self'; connect-src 'self' ws: wss:; img-src 'self' data:; media-src 'self'; style-src 'self'; script-src 'self'", 'X-Content-Type-Options': 'nosniff' });
       return res.end(bytes);
     }
     if (req.method === 'POST' && url.pathname === '/api/login') {
