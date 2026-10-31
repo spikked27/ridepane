@@ -1,5 +1,5 @@
 const $ = id => document.getElementById(id);
-const state = { mode: 'plex', history: [], page: 0, section: null, player: null, session: null, stopped: false, pair: null, pairTimer: null, phoneAuthed: false };
+const state = { mode: 'plex', history: [], page: 0, section: null, player: null, session: null, audioMode: 'separate', soundOn: false, stopped: false, pair: null, pairTimer: null, phoneAuthed: false };
 
 async function api(path, options = {}) {
   const response = await fetch(path, { ...options, headers: { 'Content-Type': 'application/json', ...(options.headers || {}) } });
@@ -144,17 +144,30 @@ function stopLocal() {
   state.stopped = true;
   state.player?.destroy(); state.player = null;
   $('audio').pause(); $('audio').removeAttribute('src'); $('audio').load();
+  state.soundOn = false;
   state.session = null;
   show($('player'), false); show($('browse'), true);
+}
+async function startCombinedSound() {
+  const output = state.player?.audioOut;
+  if (!output) throw new Error('Web Audio is unavailable. Choose the current sound mode for the next video.');
+  await output.context.resume();
+  if (output.context.state !== 'running') throw new Error('Tap Start sound again to allow audio.');
+  if (!output.unlocked) output.unlock();
+  output.volume = 1;
+  state.soundOn = true;
+  $('audio-button').textContent = 'Mute sound';
+  $('player-message').textContent = 'Playing';
 }
 async function play(payload, title) {
   setError('');
   try {
     payload.quality = $('quality').value;
+    payload.audioMode = $('sound-mode').value;
     $('browse-status').textContent = 'Preparing video…';
     const data = await api('/api/play', { method: 'POST', body: JSON.stringify(payload) });
     $('browse-status').textContent = '';
-    state.session = data.id; state.stopped = false;
+    state.session = data.id; state.audioMode = data.audioMode; state.soundOn = false; state.stopped = false;
     $('player-title').textContent = title;
     $('screen-status').textContent = 'Connecting to server…';
     show($('screen-status'), true); show($('browse'), false); show($('player'), true);
@@ -164,12 +177,13 @@ async function play(payload, title) {
     let useWebGL = false;
     try { useWebGL = !!document.createElement('canvas').getContext('webgl'); } catch { /* Canvas2D fallback */ }
     const player = new JSMpeg.Player(`${protocol}//${location.host}/ws/${data.id}`, {
-      canvas, audio: false, autoplay: true, loop: false, reconnectInterval: 0,
+      canvas, audio: data.audioMode === 'combined', autoplay: true, loop: false, reconnectInterval: 0,
       disableWebAssembly: true, disableGl: !useWebGL, videoBufferSize: 4 * 1024 * 1024,
-      onVideoDecode: () => { if (state.player === player) { show($('screen-status'), false); $('player-message').textContent = 'Playing'; } },
+      onVideoDecode: () => { if (state.player === player) { show($('screen-status'), false); $('player-message').textContent = data.audioMode === 'combined' && !state.soundOn ? 'Picture playing. Tap Start sound.' : 'Playing'; } },
       onStalled: () => { if (state.player === player && !state.stopped) $('player-message').textContent = 'Buffering…'; }
     });
     state.player = player;
+    if (data.audioMode === 'combined' && player.audioOut) player.audioOut.volume = 0;
     player.source.socket.addEventListener('close', async () => {
       if (state.stopped || state.player !== player) return;
       show($('screen-status'), true);
@@ -179,6 +193,14 @@ async function play(payload, title) {
       } catch { $('screen-status').textContent = 'Playback ended'; }
     });
     const audio = $('audio');
+    show(audio, data.audioMode === 'separate');
+    if (data.audioMode === 'combined') {
+      $('audio-button').textContent = 'Start sound';
+      $('player-message').textContent = 'Starting sound…';
+      try { await startCombinedSound(); }
+      catch { $('player-message').textContent = 'Tap Start sound to allow audio.'; }
+      return;
+    }
     audio.src = `/api/session/${data.id}/audio`;
     $('player-message').textContent = 'Starting audio…';
     await audio.play().then(() => { $('audio-button').textContent = 'Pause audio'; }).catch(() => {
@@ -245,6 +267,16 @@ $('more').addEventListener('click', () => loadSection(state.section, state.page 
 $('youtube-form').addEventListener('submit', event => { event.preventDefault(); play({ source: 'youtube', url: $('youtube-url').value }, 'YouTube video'); });
 $('stop').addEventListener('click', async () => { try { await api('/api/stop', { method: 'POST', body: '{}' }); } catch { /* local close still works */ } stopLocal(); });
 $('audio-button').addEventListener('click', async () => {
+  if (state.audioMode === 'combined') {
+    if (state.soundOn) {
+      state.player.audioOut.volume = 0;
+      state.soundOn = false;
+      $('audio-button').textContent = 'Start sound';
+    } else {
+      try { await startCombinedSound(); } catch (err) { $('player-message').textContent = err.message; }
+    }
+    return;
+  }
   const audio = $('audio');
   if (audio.paused) {
     try { await audio.play(); $('audio-button').textContent = 'Pause audio'; } catch (err) { $('player-message').textContent = err.message; }

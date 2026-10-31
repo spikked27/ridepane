@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { youtubeUrl, numberId, mediaPart, qualityConfig, youtubeInputs } from './lib.js';
+import { youtubeUrl, numberId, mediaPart, qualityConfig, audioMode, youtubeInputs } from './lib.js';
 
 test('YouTube URLs are normalized to a single video and other hosts are rejected', () => {
   assert.equal(youtubeUrl('https://youtu.be/abcdefghijk?t=30'), 'https://www.youtube.com/watch?v=abcdefghijk');
@@ -20,6 +20,9 @@ test('quality presets are bounded and default to 720p', () => {
   assert.equal(qualityConfig().height, 720);
   assert.equal(qualityConfig('maximum').height, 1080);
   assert.throws(() => qualityConfig('unlimited'));
+  assert.equal(audioMode(), 'separate');
+  assert.equal(audioMode('combined'), 'combined');
+  assert.throws(() => audioMode('invalid'));
 });
 
 test('YouTube combined and split streams are selected', () => {

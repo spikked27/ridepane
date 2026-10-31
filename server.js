@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 import crypto from 'node:crypto';
 import { spawn } from 'node:child_process';
 import QRCode from 'qrcode';
-import { youtubeUrl, numberId, plexItem, mediaPart, qualityConfig, youtubeInputs } from './lib.js';
+import { youtubeUrl, numberId, plexItem, mediaPart, qualityConfig, audioMode, youtubeInputs } from './lib.js';
 
 const root = path.dirname(fileURLToPath(import.meta.url));
 const port = Number(process.env.PORT || 8080);
@@ -171,7 +171,7 @@ function stopSession(session, message) {
   if (active === session) active = null;
 }
 function startSession(session) {
-  if (session.started || session.stopped || !session.socket || !session.audio) return;
+  if (session.started || session.stopped || !session.socket || (session.audioMode === 'separate' && !session.audio)) return;
   session.started = true;
   const input = session.source === 'plex'
     ? ['-headers', `X-Plex-Token: ${plexToken}\r\n`, '-re', '-i', new URL(session.part, plexBase).toString()]
@@ -185,12 +185,18 @@ function startSession(session) {
     ];
   const quality = session.quality;
   const audioMap = session.source === 'youtube' && session.inputs.audio ? '1:a:0?' : '0:a:0?';
-  const args = ['-hide_banner', '-loglevel', 'error', '-nostdin', ...input,
+  const videoArgs = [
     '-map', '0:v:0', '-vf', `scale=${quality.width}:${quality.height}:force_original_aspect_ratio=decrease:flags=lanczos,pad=${quality.width}:${quality.height}:(ow-iw)/2:(oh-ih)/2,fps=${quality.fps}`,
-    '-an', '-pix_fmt', 'yuv420p', '-c:v', 'mpeg1video', '-b:v', quality.videoRate, '-maxrate', quality.maxRate,
-    '-bufsize', quality.buffer, '-g', String(quality.fps), '-bf', '0', '-f', 'mpegts', '-muxdelay', '0.1', 'pipe:1',
-    '-map', audioMap, '-vn', '-ac', '2', '-ar', '48000', '-b:a', '320k', '-c:a', 'libmp3lame', '-compression_level', '0', '-f', 'mp3', 'pipe:3'];
-  const ffmpeg = spawn(process.env.FFMPEG_BIN || 'ffmpeg', args, { stdio: ['ignore', 'pipe', 'pipe', 'pipe'] });
+    '-pix_fmt', 'yuv420p', '-c:v', 'mpeg1video', '-b:v', quality.videoRate, '-maxrate', quality.maxRate,
+    '-bufsize', quality.buffer, '-g', String(quality.fps), '-bf', '0'];
+  const args = session.audioMode === 'combined'
+    ? ['-hide_banner', '-loglevel', 'error', '-nostdin', ...input, ...videoArgs,
+      '-map', audioMap, '-ac', '2', '-ar', '48000', '-c:a', 'mp2', '-b:a', '384k',
+      '-f', 'mpegts', '-muxdelay', '0.001', 'pipe:1']
+    : ['-hide_banner', '-loglevel', 'error', '-nostdin', ...input,
+      ...videoArgs, '-an', '-f', 'mpegts', '-muxdelay', '0.1', 'pipe:1',
+      '-map', audioMap, '-vn', '-ac', '2', '-ar', '48000', '-b:a', '320k', '-c:a', 'libmp3lame', '-compression_level', '0', '-f', 'mp3', 'pipe:3'];
+  const ffmpeg = spawn(process.env.FFMPEG_BIN || 'ffmpeg', args, { stdio: session.audioMode === 'combined' ? ['ignore', 'pipe', 'pipe'] : ['ignore', 'pipe', 'pipe', 'pipe'] });
   session.ffmpeg = ffmpeg;
   let stderr = '';
   ffmpeg.stderr.on('data', chunk => { stderr = (stderr + chunk.toString()).slice(-1000); });
@@ -200,7 +206,7 @@ function startSession(session) {
       session.socket.once('drain', () => ffmpeg.stdout.resume());
     }
   });
-  ffmpeg.stdio[3].pipe(session.audio);
+  if (session.audioMode === 'separate') ffmpeg.stdio[3].pipe(session.audio);
   ffmpeg.on('error', err => stopSession(session, `Video converter failed: ${err.message}`));
   ffmpeg.on('exit', code => {
     if (!session.stopped) stopSession(session, code === 0 ? undefined : `Playback ended: ${(stderr.trim() || `ffmpeg exit ${code}`).replaceAll(plexToken, '[redacted]')}`);
@@ -340,7 +346,7 @@ const server = http.createServer(async (req, res) => {
     if (req.method === 'POST' && url.pathname === '/api/play') {
       if (!sameOrigin(req)) return error(res, 403, 'Invalid origin.');
       const input = await body(req);
-      const session = { id: crypto.randomUUID(), source: input.source, quality: qualityConfig(input.quality), stopped: false, started: false };
+      const session = { id: crypto.randomUUID(), source: input.source, quality: qualityConfig(input.quality), audioMode: audioMode(input.audioMode), stopped: false, started: false };
       if (input.source === 'youtube') session.inputs = await resolveYouTube(youtubeUrl(input.url), session.quality.height);
       else if (input.source === 'plex') {
         const id = numberId(input.id);
@@ -349,7 +355,7 @@ const server = http.createServer(async (req, res) => {
       } else return error(res, 400, 'Choose Plex or YouTube.');
       stopSession(active);
       active = session;
-      return json(res, 200, { id: session.id });
+      return json(res, 200, { id: session.id, audioMode: session.audioMode });
     }
     const statusMatch = url.pathname.match(/^\/api\/session\/([a-f0-9-]+)\/status$/);
     if (req.method === 'GET' && statusMatch) {
@@ -364,7 +370,7 @@ const server = http.createServer(async (req, res) => {
     }
     const audioMatch = url.pathname.match(/^\/api\/session\/([a-f0-9-]+)\/audio$/);
     if (req.method === 'GET' && audioMatch) {
-      if (!active || active.id !== audioMatch[1] || active.audio) return error(res, 404, 'Session unavailable.');
+      if (!active || active.id !== audioMatch[1] || active.audio || active.audioMode !== 'separate') return error(res, 404, 'Session unavailable.');
       res.writeHead(200, { 'Content-Type': 'audio/mpeg', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' });
       active.audio = res;
       const session = active;
@@ -374,7 +380,7 @@ const server = http.createServer(async (req, res) => {
     }
     error(res, 404, 'Not found.');
   } catch (err) {
-    error(res, err.message === 'Invalid Plex item.' || err.message.startsWith('Enter a ') ? 400 : 500, err.message || 'Server error.');
+    error(res, ['Invalid Plex item.', 'Invalid quality setting.', 'Invalid sound mode.'].includes(err.message) || err.message.startsWith('Enter a ') ? 400 : 500, err.message || 'Server error.');
   }
 });
 

@@ -45,6 +45,12 @@ export function qualityConfig(name) {
   return QUALITY[name];
 }
 
+export function audioMode(name) {
+  if (name === undefined || name === 'separate') return 'separate';
+  if (name === 'combined') return 'combined';
+  throw new Error('Invalid sound mode.');
+}
+
 export function youtubeInputs(info) {
   const formats = info.requested_formats || [info];
   const video = formats.find(x => x.vcodec && x.vcodec !== 'none');

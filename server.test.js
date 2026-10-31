@@ -88,6 +88,14 @@ test('HTTP flow authenticates, browses Plex, and creates bounded playback sessio
     response = await fetch(base + '/api/play', { method: 'POST', headers: { ...headers, 'Content-Type': 'application/json' }, body: JSON.stringify({ source: 'plex', id: '9' }) });
     assert.equal(response.status, 200);
     assert.match((await response.json()).id, /^[a-f0-9-]+$/);
+    response = await fetch(base + '/api/play', { method: 'POST', headers: { ...headers, 'Content-Type': 'application/json' }, body: JSON.stringify({ source: 'plex', id: '9', audioMode: 'combined' }) });
+    assert.equal(response.status, 200);
+    const combined = await response.json();
+    assert.equal(combined.audioMode, 'combined');
+    response = await fetch(base + `/api/session/${combined.id}/audio`, { headers });
+    assert.equal(response.status, 404);
+    response = await fetch(base + '/api/play', { method: 'POST', headers: { ...headers, 'Content-Type': 'application/json' }, body: JSON.stringify({ source: 'plex', id: '9', audioMode: 'unsupported' }) });
+    assert.equal(response.status, 400);
     response = await fetch(base + '/api/play', { method: 'POST', headers: { ...headers, 'Content-Type': 'application/json' }, body: JSON.stringify({ source: 'youtube', url: 'https://evil.example/watch?v=abcdefghijk' }) });
     assert.equal(response.status, 400);
     response = await fetch(base + '/api/pair/start', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
