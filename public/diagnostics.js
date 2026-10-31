@@ -9,6 +9,7 @@
   function render() {
     const lines = [`Ridepane car checks · ${new Date().toLocaleString()}`];
     if (results.browser) lines.push('', 'BROWSER', ...results.browser);
+    if (results.audio) lines.push('', 'AUDIO ROUTING', ...results.audio);
     if (results.connection) lines.push('', 'CONNECTION', ...results.connection);
     if (results.cache) lines.push('', 'TEST CACHE', ...results.cache);
     $('diagnostics-report').textContent = lines.join('\n');
@@ -58,11 +59,20 @@
     }
     let webgl = false;
     try { webgl = !!document.createElement('canvas').getContext('webgl'); } catch { /* unsupported */ }
+    const audioElement = document.createElement('audio');
+    const codecHints = [
+      ['MP3', 'audio/mpeg'],
+      ['AAC', 'audio/mp4; codecs="mp4a.40.2"'],
+      ['Opus', 'audio/webm; codecs="opus"'],
+      ['AC-3', 'audio/mp4; codecs="ac-3"'],
+      ['E-AC-3', 'audio/mp4; codecs="ec-3"']
+    ].map(([name, type]) => `${name} ${audioElement.canPlayType?.(type) || 'no'}`).join('; ');
     results.browser = [
       `Screen: ${window.innerWidth} × ${window.innerHeight} CSS px; pixel ratio ${window.devicePixelRatio || 1}`,
       `WebGL: ${webgl ? 'yes' : 'no'}; WebCodecs: ${'VideoDecoder' in window ? 'yes' : 'no'}`,
       `MediaSource: ${'MediaSource' in window ? 'yes' : 'no'}; IndexedDB: ${'indexedDB' in window ? 'yes' : 'no'}`,
       `Fullscreen API: ${document.fullscreenEnabled ? 'yes' : 'no'}; max audio channels: ${channels}`,
+      `Audio decode hints: ${codecHints}`,
       ...(await storageLines()),
       `Browser: ${navigator.userAgent}`
     ];
@@ -168,6 +178,49 @@
       results.cache = [`64 MiB verified; saved ${new Date(meta.created).toLocaleString()}`, 'Retention passed for this browser session. This does not guarantee full movie storage.', ...(await storageLines())];
     } finally { db.close(); }
   }
+  async function playChannels() {
+    const count = Number($('diagnostics-audio-layout').value);
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContextClass) throw new Error('Web Audio is unavailable');
+    const context = new AudioContextClass();
+    const timers = [];
+    try {
+      const maximum = context.destination.maxChannelCount;
+      if (!Number.isInteger(maximum) || maximum < count) {
+        results.audio = [`Requested ${count} channels; browser reports a maximum of ${maximum || 'unknown'}.`, 'This browser cannot be asked to send that many discrete channels.'];
+        return;
+      }
+      context.destination.channelCount = count;
+      const merger = context.createChannelMerger(count);
+      merger.connect(context.destination);
+      await context.resume();
+      const start = context.currentTime + 0.2;
+      for (let i = 0; i < count; i++) {
+        const oscillator = context.createOscillator();
+        const gain = context.createGain();
+        oscillator.frequency.value = count >= 6 && i === 3 ? 80 : 600;
+        oscillator.connect(gain);
+        gain.connect(merger, 0, i);
+        const time = start + i * 0.7;
+        gain.gain.setValueAtTime(0, time);
+        gain.gain.linearRampToValueAtTime(0.09, time + 0.03);
+        gain.gain.setValueAtTime(0.09, time + 0.3);
+        gain.gain.linearRampToValueAtTime(0, time + 0.4);
+        oscillator.start(time);
+        oscillator.stop(time + 0.41);
+        timers.push(setTimeout(() => status(`Playing channel ${i + 1} of ${count}…`), 200 + i * 700));
+      }
+      await new Promise(resolve => setTimeout(resolve, count * 700 + 400));
+      results.audio = [
+        `Browser accepted ${count} discrete channel${count === 1 ? '' : 's'}; maximum reported: ${maximum}.`,
+        'Listen for separate speaker positions. Did channels 3–8 move, repeat, or stay silent?',
+        'This test cannot identify Tesla speaker wiring automatically. Ridepane videos still send stereo.'
+      ];
+    } finally {
+      timers.forEach(clearTimeout);
+      await context.close().catch(() => {});
+    }
+  }
 
   $('diagnostics-browser').addEventListener('click', () => run(checkBrowser));
   $('diagnostics-speed').addEventListener('click', () => run(checkConnection));
@@ -177,4 +230,5 @@
     await clearCache();
     results.cache = ['Test cache cleared.'];
   }));
+  $('diagnostics-audio-play').addEventListener('click', () => run(playChannels));
 })();

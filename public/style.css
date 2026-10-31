@@ -6,3 +6,4 @@
 .tabs{overflow-x:auto;white-space:nowrap}#desktop-tab,.desktop-phone-link{display:inline-block;text-decoration:none}.desktop-phone-link{margin-top:12px}
 a:focus-visible{outline:3px solid #75e0d1;outline-offset:3px}
 .diagnostic-actions{display:flex;flex-wrap:wrap;gap:10px;margin:20px 0}.diagnostic-actions button{min-height:48px}.diagnostic-actions button:disabled{opacity:.55;cursor:wait}.diagnostics-report{white-space:pre-wrap;overflow-wrap:anywhere;background:#102a33;border:1px solid #31515c;border-radius:14px;padding:18px;color:#e7f4f2;line-height:1.6;font:13px/1.6 ui-monospace,SFMono-Regular,Consolas,monospace;min-height:100px}
+.audio-test-row{display:flex;align-items:center;flex-wrap:wrap;gap:10px}.audio-test-row label{margin:0}.audio-test-row select{background:#102a33;color:#f2f7f7;border:1px solid #527781;border-radius:10px;padding:10px}.audio-test-row button{min-height:48px}

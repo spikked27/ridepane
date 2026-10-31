@@ -6,10 +6,10 @@
   <meta name="theme-color" content="#08141c">
   <title>Ridepane · Passenger media</title>
   <link rel="icon" type="image/svg+xml" href="/brand/icon.svg">
-  <link rel="stylesheet" href="/style.css?v=0.6.0">
+  <link rel="stylesheet" href="/style.css?v=0.6.1">
   <script src="/vendor/jsmpeg.min.js" defer></script>
-  <script src="/app.js?v=0.6.0" defer></script>
-  <script src="/diagnostics.js?v=0.6.0" defer></script>
+  <script src="/app.js?v=0.6.1" defer></script>
+  <script src="/diagnostics.js?v=0.6.1" defer></script>
 </head>
 <body>
   <main>
@@ -77,6 +77,8 @@
             <button id="diagnostics-cache-verify" class="secondary" type="button">Verify saved cache</button>
             <button id="diagnostics-cache-clear" class="secondary" type="button">Clear test cache</button>
           </div>
+          <div class="audio-test-row"><label for="diagnostics-audio-layout">Speaker routing</label><select id="diagnostics-audio-layout"><option value="2">Stereo · 2 channels</option><option value="6" selected>5.1 · 6 channels</option><option value="8">7.1 · 8 channels</option></select><button id="diagnostics-audio-play" class="secondary" type="button">Play channel test</button></div>
+          <p class="muted">The channel test plays quiet tones one at a time. Listen for distinct speaker positions. A browser capability report alone cannot confirm physical 5.1 or 7.1 output; Ridepane playback currently sends stereo.</p>
           <p id="diagnostics-status" class="muted" role="status">Run the browser and connection checks, then save a test cache. Close and reopen the Tesla browser before verifying the cache.</p>
           <pre id="diagnostics-report" class="diagnostics-report" aria-live="polite">No results yet.</pre>
         </section>
