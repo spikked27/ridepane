@@ -1,6 +1,6 @@
 # Ridepane
 
-Ridepane is a private passenger media page for a Tesla browser. It runs on your Unraid server, browses your Plex movie and TV libraries, and accepts a YouTube video link. The server converts video to MPEG-1 transport stream, sends it over a WebSocket, and the bundled JSMpeg decoder draws it on a canvas. Audio is sent separately as 192 kbps MP3. This avoids relying on Tesla's ordinary in-motion `<video>` playback.
+Ridepane is a private passenger media page for a Tesla browser. It runs on your Unraid server, browses your Plex movie and TV libraries, and accepts a YouTube video link. The server converts video to MPEG-1 transport stream, sends it over a WebSocket, and the bundled JSMpeg decoder draws it on a canvas. Audio is sent separately as 320 kbps stereo MP3 at 48 kHz. This avoids relying on Tesla's ordinary in-motion `<video>` playback.
 
 The driver must not watch or operate the page while driving. Tesla officially supports in-motion passenger video on equipped rear touchscreens; front-screen canvas playback is an unofficial workaround and may stop working after a Tesla update.
 
@@ -31,6 +31,7 @@ The car's sign-in screen shows a QR code. Scan it with your phone, enter the app
 - Open **Plex library** to browse sections, shows, seasons, movies, and episodes. Playback reads the selected Plex media part with your configured token. Ridepane does not store the token in the car's browser.
 - Open **YouTube link** and paste a single video URL. This experimental path uses `yt-dlp` inside the container and selects separate high-quality video and audio streams when available. YouTube changes can break extraction, and restricted or paid videos often fail. YouTube's API policies do not permit replacing the standard player in API clients; this is not an official YouTube integration.
 - **Start audio** may need a tap because browsers can block autoplay. Audio and picture use separate channels, so some sync drift is possible.
+- **Audio output** is currently stereo, including when Plex provides a 5.1 or 7.1 source. The app's **Check browser channels** button reports the browser's maximum output channel count. A Tesla's speaker count does not guarantee that its browser exposes discrete surround channels; that must be checked in the car before a surround stream can be offered. Re-encoding lower-bitrate source audio at 320 kbps does not restore lost detail.
 - **Picture quality** has Balanced (540p/30 fps at about 2.5 Mbps), High (720p/30 fps at about 5 Mbps, the default), and Maximum (1080p/30 fps at about 10 Mbps). These are encoding targets, not guaranteed delivered rates. Maximum needs a capable Unraid CPU and Tesla browser, and cannot add detail to a lower-resolution source. Start with High and compare on your car. MPEG-1 still uses more bandwidth than modern codecs at the same visual quality, so the original stream is not preserved bit for bit.
 - One playback session runs at a time. Starting another title closes the previous one. Subtitles, playback position, and Plex watch status are not yet synchronized.
 

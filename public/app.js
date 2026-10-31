@@ -206,6 +206,20 @@ $('pair-form').addEventListener('submit', async event => {
 });
 $('plex-tab').addEventListener('click', () => setTab('plex'));
 $('youtube-tab').addEventListener('click', () => setTab('youtube'));
+$('sound-check').addEventListener('click', async () => {
+  const result = $('sound-capability');
+  const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+  if (!AudioContextClass) { result.textContent = 'This browser does not expose Web Audio output information.'; return; }
+  let context;
+  try {
+    context = new AudioContextClass();
+    const channels = context.destination.maxChannelCount;
+    result.textContent = Number.isInteger(channels) && channels > 0
+      ? `Browser reports up to ${channels} output channel${channels === 1 ? '' : 's'}. Ridepane currently sends stereo.`
+      : 'This browser did not report its output channel count.';
+  } catch { result.textContent = 'Could not check this browser’s audio output.'; }
+  finally { await context?.close().catch(() => {}); }
+});
 $('back').addEventListener('click', goBack);
 $('more').addEventListener('click', () => loadSection(state.section, state.page + 1));
 $('youtube-form').addEventListener('submit', event => { event.preventDefault(); play({ source: 'youtube', url: $('youtube-url').value }, 'YouTube video'); });

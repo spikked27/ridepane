@@ -150,7 +150,7 @@ function startSession(session) {
     '-map', '0:v:0', '-vf', `scale=${quality.width}:${quality.height}:force_original_aspect_ratio=decrease:flags=lanczos,pad=${quality.width}:${quality.height}:(ow-iw)/2:(oh-ih)/2,fps=${quality.fps}`,
     '-an', '-pix_fmt', 'yuv420p', '-c:v', 'mpeg1video', '-b:v', quality.videoRate, '-maxrate', quality.maxRate,
     '-bufsize', quality.buffer, '-g', String(quality.fps), '-bf', '0', '-f', 'mpegts', '-muxdelay', '0.1', 'pipe:1',
-    '-map', audioMap, '-vn', '-ac', '2', '-ar', '48000', '-b:a', '192k', '-c:a', 'libmp3lame', '-f', 'mp3', 'pipe:3'];
+    '-map', audioMap, '-vn', '-ac', '2', '-ar', '48000', '-b:a', '320k', '-c:a', 'libmp3lame', '-compression_level', '0', '-f', 'mp3', 'pipe:3'];
   const ffmpeg = spawn(process.env.FFMPEG_BIN || 'ffmpeg', args, { stdio: ['ignore', 'pipe', 'pipe', 'pipe'] });
   session.ffmpeg = ffmpeg;
   let stderr = '';
