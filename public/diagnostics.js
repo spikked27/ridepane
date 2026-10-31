@@ -59,6 +59,13 @@
     }
     let webgl = false;
     try { webgl = !!document.createElement('canvas').getContext('webgl'); } catch { /* unsupported */ }
+    let h264 = 'unavailable';
+    if (window.VideoDecoder?.isConfigSupported) {
+      try {
+        const result = await window.VideoDecoder.isConfigSupported({ codec: 'avc1.42E01E', codedWidth: 1280, codedHeight: 720 });
+        h264 = result.supported ? 'yes' : 'no';
+      } catch { h264 = 'check failed'; }
+    }
     const audioElement = document.createElement('audio');
     const codecHints = [
       ['MP3', 'audio/mpeg'],
@@ -70,6 +77,7 @@
     results.browser = [
       `Screen: ${window.innerWidth} × ${window.innerHeight} CSS px; pixel ratio ${window.devicePixelRatio || 1}`,
       `WebGL: ${webgl ? 'yes' : 'no'}; WebCodecs: ${'VideoDecoder' in window ? 'yes' : 'no'}`,
+      `H.264 decoder (720p): ${h264}; JPEG canvas: ${'createImageBitmap' in window ? 'yes' : 'no'}`,
       `MediaSource: ${'MediaSource' in window ? 'yes' : 'no'}; IndexedDB: ${'indexedDB' in window ? 'yes' : 'no'}`,
       `Fullscreen API: ${document.fullscreenEnabled ? 'yes' : 'no'}; max audio channels: ${channels}`,
       `Audio decode hints: ${codecHints}`,

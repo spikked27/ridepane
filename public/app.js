@@ -14,7 +14,10 @@ function openApp() {
   clearTimeout(state.pairTimer);
   state.pair = null;
   show($('login'), false); show($('pair-phone'), false); show($('app'), true);
-  api('/api/me').then(me => show($('desktop-tab'), !!me.desktop)).catch(() => {});
+  api('/api/me').then(me => {
+    show($('desktop-tab'), !!me.desktop);
+    show($('desktop-fallback'), !!me.desktop);
+  }).catch(() => {});
   loadSections();
 }
 async function startPairing() {
@@ -211,6 +214,18 @@ $('pair-form').addEventListener('submit', async event => {
 $('plex-tab').addEventListener('click', () => setTab('plex'));
 $('youtube-tab').addEventListener('click', () => setTab('youtube'));
 $('diagnostics-tab').addEventListener('click', () => setTab('diagnostics'));
+function desktopEncoderKey() {
+  const desktop = new URL('/desktop/', location.href);
+  return `${(desktop.origin + desktop.pathname).replace(/[^a-zA-Z0-9._-]/g, '_')}_encoder`;
+}
+$('desktop-tab').addEventListener('click', () => {
+  try { localStorage.removeItem(desktopEncoderKey()); } catch { /* continue with the server default */ }
+});
+$('desktop-fallback').addEventListener('click', () => {
+  try { localStorage.setItem(desktopEncoderKey(), 'jpeg'); }
+  catch { setError('This browser cannot save the fallback setting. Try Full YouTube instead.'); return; }
+  location.assign('/desktop/');
+});
 $('sound-check').addEventListener('click', async () => {
   const result = $('sound-capability');
   const AudioContextClass = window.AudioContext || window.webkitAudioContext;

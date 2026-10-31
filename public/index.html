@@ -6,10 +6,10 @@
   <meta name="theme-color" content="#08141c">
   <title>Ridepane · Passenger media</title>
   <link rel="icon" type="image/svg+xml" href="/brand/icon.svg">
-  <link rel="stylesheet" href="/style.css?v=0.6.1">
+  <link rel="stylesheet" href="/style.css?v=0.6.2">
   <script src="/vendor/jsmpeg.min.js" defer></script>
-  <script src="/app.js?v=0.6.1" defer></script>
-  <script src="/diagnostics.js?v=0.6.1" defer></script>
+  <script src="/app.js?v=0.6.2" defer></script>
+  <script src="/diagnostics.js?v=0.6.2" defer></script>
 </head>
 <body>
   <main>
@@ -53,6 +53,7 @@
           <button id="plex-tab" class="tab active" type="button" aria-current="page">Plex library</button>
           <button id="youtube-tab" class="tab" type="button">YouTube link</button>
           <a id="desktop-tab" class="tab hidden" href="/desktop/" title="Open YouTube using the full browser window">Full YouTube ↗</a>
+          <button id="desktop-fallback" class="tab hidden" type="button" title="Try JPEG frames if Full YouTube is black on this browser">YouTube fallback ↗</button>
           <button id="diagnostics-tab" class="tab" type="button">Car checks</button>
         </nav>
         <div class="quality-row"><label for="quality">Picture quality</label><select id="quality"><option value="balanced">Balanced · 540p / 30 fps</option><option value="high" selected>High · 720p / 30 fps</option><option value="maximum">Maximum · 1080p / 30 fps</option></select><span>Higher settings use more mobile data and Unraid CPU.</span></div>
