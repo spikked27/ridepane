@@ -32,6 +32,12 @@ services:
       HARDEN_OPENBOX: "true"
       SELKIES_ENABLE_SHARING: "false"
       SELKIES_FILE_TRANSFERS: none
+      SELKIES_ALLOWED_ORIGINS: "${PUBLIC_URL:-*}"
+      SELKIES_FRAMERATE: "30"
+      SELKIES_RATE_CONTROL_MODE: cbr,crf
+      SELKIES_VIDEO_BITRATE: "8000"
+      SELKIES_VIDEO_STREAMING_MODE: "true"
+      SELKIES_AUDIO_BITRATE: "320000"
       TITLE: Ridepane Full YouTube
       CHROME_CLI: "--kiosk https://www.youtube.com"
     volumes:

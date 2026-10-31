@@ -51,14 +51,10 @@ function setTab(mode) {
   state.mode = mode;
   show($('plex-panel'), mode === 'plex');
   show($('youtube-panel'), mode === 'youtube');
-  show($('desktop-panel'), mode === 'desktop');
-  for (const name of ['plex', 'youtube', 'desktop']) {
+  for (const name of ['plex', 'youtube']) {
     $(`${name}-tab`).classList.toggle('active', mode === name);
     $(`${name}-tab`).setAttribute('aria-current', mode === name ? 'page' : 'false');
   }
-  const frame = $('desktop-frame');
-  if (mode === 'desktop' && !frame.getAttribute('src')) frame.src = '/desktop/';
-  else if (mode !== 'desktop' && frame.getAttribute('src')) frame.removeAttribute('src');
   setError('');
 }
 
@@ -208,13 +204,11 @@ $('pair-form').addEventListener('submit', async event => {
     show($('phone-password-wrap'), false);
     $('phone-message').textContent = 'Approved. The car screen will sign in automatically.';
     $('pair-form').querySelector('button').disabled = true;
-    const me = await api('/api/me');
-    show($('desktop-phone-link'), !!me.desktop);
+    api('/api/me').then(me => show($('desktop-phone-link'), !!me.desktop)).catch(() => {});
   } catch (err) { $('phone-message').textContent = ''; $('phone-error').textContent = err.message; }
 });
 $('plex-tab').addEventListener('click', () => setTab('plex'));
 $('youtube-tab').addEventListener('click', () => setTab('youtube'));
-$('desktop-tab').addEventListener('click', () => setTab('desktop'));
 $('sound-check').addEventListener('click', async () => {
   const result = $('sound-capability');
   const AudioContextClass = window.AudioContext || window.webkitAudioContext;
