@@ -15,8 +15,8 @@ const plexToken = process.env.PLEX_TOKEN;
 const desktopBase = process.env.DESKTOP_URL ? new URL(process.env.DESKTOP_URL) : null;
 const loginAttempts = new Map();
 const pairs = new Map();
-const diagnosticChunk = crypto.randomBytes(65536);
 const diagnosticBytes = 8 * 1024 * 1024;
+const diagnosticPayload = crypto.randomBytes(diagnosticBytes);
 let activeDiagnosticTransfers = 0;
 let active = null;
 let lastSession = null;
@@ -309,8 +309,9 @@ const server = http.createServer(async (req, res) => {
       res.on('close', () => { activeDiagnosticTransfers--; });
       const write = () => {
         while (!res.destroyed && sent < diagnosticBytes) {
-          sent += diagnosticChunk.length;
-          if (!res.write(diagnosticChunk)) return;
+          const chunk = diagnosticPayload.subarray(sent, sent + 65536);
+          sent += chunk.length;
+          if (!res.write(chunk)) return;
         }
         if (!res.destroyed) res.end();
       };
