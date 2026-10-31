@@ -98,7 +98,7 @@ function ffHeaders(format) {
 async function resolveYouTube(url, height) {
   const format = `bestvideo[height<=${height}]+bestaudio/best[height<=${height}]/best`;
   const child = spawn(process.env.YTDLP_BIN || 'yt-dlp',
-    ['--no-playlist', '--no-warnings', '--dump-single-json', '-f', format, url],
+    ['--no-playlist', '--no-warnings', '--js-runtimes', 'node', '--dump-single-json', '-f', format, url],
     { stdio: ['ignore', 'pipe', 'pipe'] });
   return await new Promise((resolve, reject) => {
     let output = '', problem = '', settled = false;
