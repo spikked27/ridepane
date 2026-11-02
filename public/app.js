@@ -284,7 +284,7 @@ async function openFullApp(site, videoMode = 'jpeg', phone = false) {
     await api('/api/desktop/open', { method: 'POST', body: JSON.stringify({ site }) });
     if (videoMode === 'jpeg') localStorage.setItem(desktopEncoderKey(), 'jpeg');
     else localStorage.removeItem(desktopEncoderKey());
-    location.assign(`/desktop/?ridepane=0.7.5&open=${Date.now()}`);
+    location.assign(`/desktop/?ridepane=0.7.6&open=${Date.now()}`);
   } catch (err) { message.textContent = err.message; }
 }
 $('full-plex').addEventListener('click', () => openFullApp('plex'));

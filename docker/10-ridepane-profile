@@ -19,3 +19,9 @@ fi
 # The browser has stopped when custom init runs. Its lock links point into the
 # old container's /tmp and can block Chromium after an image update or restart.
 rm -f "$new_profile/SingletonCookie" "$new_profile/SingletonLock" "$new_profile/SingletonSocket"
+
+# The base image waits for this PID path before starting Selkies. PulseAudio
+# now keeps its socket and PID in a private, writable runtime directory.
+if [ "${PULSE_RUNTIME_PATH:-/defaults}" != /defaults ]; then
+  ln -sfn "$PULSE_RUNTIME_PATH/pid" /defaults/pid
+fi
