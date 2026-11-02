@@ -46,7 +46,7 @@ test('touch input turns a swipe into scrolling and a tap into a remote click', (
   touchEvent('touchend', 100, 160);
   assert.equal(events.length, 1);
   assert.equal(events[0].type, 'wheel');
-  assert.equal(events[0].deltaY, 60);
+  assert.equal(events[0].deltaY, 10);
   events.length = 0;
   touchEvent('touchstart', 100, 200);
   touchEvent('touchend', 100, 200);
@@ -94,13 +94,20 @@ test('Tesla-sized browsers with mouse-style touch get scroll and keyboard contro
   assert.equal(overlay.focused, true);
   controls.children[1].click();
   assert.equal(overlay.focused, false);
+  let pointerStopped = false;
+  let pointerPrevented = false;
+  listeners.get('pointerdown')({ target: overlay, pointerType: 'mouse',
+    stopImmediatePropagation() { pointerStopped = true; },
+    preventDefault() { pointerPrevented = true; } });
+  assert.equal(pointerStopped, true);
+  assert.equal(pointerPrevented, false, 'mouse compatibility events must still reach Ridepane');
   const mouse = (name, x, y) => listeners.get(name)({ target: overlay, isTrusted: true,
     button: 0, clientX: x, clientY: y, preventDefault() {}, stopImmediatePropagation() {} });
   mouse('mousedown', 100, 200);
   mouse('mousemove', 100, 160);
   mouse('mouseup', 100, 160);
   assert.deepEqual(events.map(event => event.type), ['wheel']);
-  assert.equal(events[0].deltaY, 60);
+  assert.equal(events[0].deltaY, 10);
   events.length = 0;
   mouse('mousedown', 100, 200);
   mouse('mouseup', 100, 200);

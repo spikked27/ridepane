@@ -65,13 +65,17 @@
   let mouseGesture = null;
   let ignoreClickUntil = 0;
   const stop = event => { event.preventDefault(); event.stopImmediatePropagation(); };
+  const scrollDelta = (previous, current) => Math.max(-36, Math.min(36, (previous - current) * 0.25));
 
   window.addEventListener('pointerdown', event => {
-    if (event.pointerType === 'touch' && isStream(event.target)) stop(event);
+    if (!isStream(event.target)) return;
+    if (event.pointerType === 'touch') stop(event);
+    else if (narrowScreen && event.pointerType === 'mouse') event.stopImmediatePropagation();
   }, { capture: true, passive: false });
-  for (const name of ['pointermove', 'pointerup', 'pointercancel']) {
+  for (const name of ['pointermove', 'pointerup', 'pointercancel', 'pointerrawupdate']) {
     window.addEventListener(name, event => {
       if (event.pointerType === 'touch' && gesture) stop(event);
+      else if (narrowScreen && event.pointerType === 'mouse' && mouseGesture) event.stopImmediatePropagation();
     }, { capture: true, passive: false });
   }
 
@@ -97,8 +101,8 @@
     if (gesture.moved) {
       gesture.target.dispatchEvent(new WheelEvent('wheel', {
         bubbles: true, cancelable: true, deltaMode: 0,
-        deltaX: (gesture.lastX - touch.clientX) * 1.5,
-        deltaY: (gesture.lastY - touch.clientY) * 1.5,
+        deltaX: scrollDelta(gesture.lastX, touch.clientX),
+        deltaY: scrollDelta(gesture.lastY, touch.clientY),
         clientX: touch.clientX, clientY: touch.clientY
       }));
     }
@@ -145,8 +149,8 @@
     if (mouseGesture.moved) {
       mouseGesture.target.dispatchEvent(new WheelEvent('wheel', {
         bubbles: true, cancelable: true, deltaMode: 0,
-        deltaX: (mouseGesture.lastX - event.clientX) * 1.5,
-        deltaY: (mouseGesture.lastY - event.clientY) * 1.5,
+        deltaX: scrollDelta(mouseGesture.lastX, event.clientX),
+        deltaY: scrollDelta(mouseGesture.lastY, event.clientY),
         clientX: event.clientX, clientY: event.clientY
       }));
     }
