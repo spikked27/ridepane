@@ -65,7 +65,7 @@
   let mouseGesture = null;
   let ignoreClickUntil = 0;
   const stop = event => { event.preventDefault(); event.stopImmediatePropagation(); };
-  const scrollDelta = (previous, current) => Math.max(-36, Math.min(36, (previous - current) * 0.25));
+  const scrollDelta = (previous, current) => Math.max(-27, Math.min(27, (previous - current) * 0.1875));
 
   window.addEventListener('pointerdown', event => {
     if (!isStream(event.target)) return;

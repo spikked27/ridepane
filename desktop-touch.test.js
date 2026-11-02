@@ -46,7 +46,7 @@ test('touch input turns a swipe into scrolling and a tap into a remote click', (
   touchEvent('touchend', 100, 160);
   assert.equal(events.length, 1);
   assert.equal(events[0].type, 'wheel');
-  assert.equal(events[0].deltaY, 10);
+  assert.equal(events[0].deltaY, 7.5);
   events.length = 0;
   touchEvent('touchstart', 100, 200);
   touchEvent('touchend', 100, 200);
@@ -107,7 +107,7 @@ test('Tesla-sized browsers with mouse-style touch get scroll and keyboard contro
   mouse('mousemove', 100, 160);
   mouse('mouseup', 100, 160);
   assert.deepEqual(events.map(event => event.type), ['wheel']);
-  assert.equal(events[0].deltaY, 10);
+  assert.equal(events[0].deltaY, 7.5);
   events.length = 0;
   mouse('mousedown', 100, 200);
   mouse('mouseup', 100, 200);
