@@ -6,6 +6,7 @@ import crypto from 'node:crypto';
 import { spawn } from 'node:child_process';
 import QRCode from 'qrcode';
 import { youtubeUrl, numberId, plexItem, mediaPart, qualityConfig, audioMode, youtubeInputs } from './lib.js';
+import { desktopSiteUrl, openDesktopSite } from './desktop.js';
 
 const root = path.dirname(fileURLToPath(import.meta.url));
 const port = Number(process.env.PORT || 8080);
@@ -90,7 +91,7 @@ function proxyDesktop(req, res) {
     res.writeHead(response.statusCode, response.headers);
     response.pipe(res);
   });
-  upstream.on('error', () => { if (!res.headersSent) error(res, 502, 'YouTube desktop is unavailable.'); else res.destroy(); });
+  upstream.on('error', () => { if (!res.headersSent) error(res, 502, 'Full browser is unavailable.'); else res.destroy(); });
   req.pipe(upstream);
 }
 function proxyDesktopSocket(req, socket, head) {
@@ -231,7 +232,7 @@ const server = http.createServer(async (req, res) => {
     if (req.method === 'GET' && url.pathname === '/healthz') return json(res, 200, { ok: true });
     if (url.pathname === '/desktop' || url.pathname.startsWith('/desktop/')) {
       if (!authed(req)) return error(res, 401, 'Sign in to Ridepane.');
-      if (!desktopBase) return error(res, 404, 'YouTube desktop is not installed.');
+      if (!desktopBase) return error(res, 404, 'Full browser is not installed.');
       if (url.pathname === '/desktop') { res.writeHead(302, { Location: '/desktop/' }); return res.end(); }
       if (req.method === 'GET' && ['/desktop/icon.png', '/desktop/icon-512.png'].includes(url.pathname)) {
         const file = url.pathname.endsWith('512.png') ? 'icon-512.png' : 'icon-256.png';
@@ -240,7 +241,7 @@ const server = http.createServer(async (req, res) => {
         return res.end(bytes);
       }
       if (req.method === 'GET' && url.pathname === '/desktop/manifest.json') {
-        return json(res, 200, { name: 'Ridepane Full YouTube', short_name: 'Ridepane', start_url: '/desktop/', display: 'standalone', icons: [{ src: '/desktop/icon.png', sizes: '256x256', type: 'image/png' }, { src: '/desktop/icon-512.png', sizes: '512x512', type: 'image/png' }] });
+        return json(res, 200, { name: 'Ridepane Full Apps', short_name: 'Ridepane', start_url: '/desktop/', display: 'standalone', icons: [{ src: '/desktop/icon.png', sizes: '256x256', type: 'image/png' }, { src: '/desktop/icon-512.png', sizes: '512x512', type: 'image/png' }] });
       }
       return proxyDesktop(req, res);
     }
@@ -300,6 +301,16 @@ const server = http.createServer(async (req, res) => {
       return json(res, 200, { ok: true });
     }
     if (req.method === 'GET' && url.pathname === '/api/me') return json(res, 200, { ok: true, plex: true, desktop: !!desktopBase });
+    if (req.method === 'POST' && url.pathname === '/api/desktop/open') {
+      if (!sameOrigin(req)) return error(res, 403, 'Invalid origin.');
+      if (!desktopBase) return error(res, 404, 'Full browser is not installed.');
+      const input = await body(req);
+      const site = String(input.site || '');
+      desktopSiteUrl(site);
+      try { await openDesktopSite(site); }
+      catch { return error(res, 502, 'The full browser is not ready. Try again shortly.'); }
+      return json(res, 200, { ok: true, site });
+    }
     if (req.method === 'GET' && url.pathname === '/api/diagnostics/ping') return json(res, 200, { ok: true });
     if (req.method === 'GET' && url.pathname === '/api/diagnostics/transfer') {
       if (activeDiagnosticTransfers >= 2) return error(res, 429, 'Another connection test is running.');
@@ -380,7 +391,7 @@ const server = http.createServer(async (req, res) => {
     }
     error(res, 404, 'Not found.');
   } catch (err) {
-    error(res, ['Invalid Plex item.', 'Invalid quality setting.', 'Invalid sound mode.'].includes(err.message) || err.message.startsWith('Enter a ') ? 400 : 500, err.message || 'Server error.');
+    error(res, ['Invalid Plex item.', 'Invalid quality setting.', 'Invalid sound mode.', 'Invalid full app.'].includes(err.message) || err.message.startsWith('Enter a ') ? 400 : 500, err.message || 'Server error.');
   }
 });
 

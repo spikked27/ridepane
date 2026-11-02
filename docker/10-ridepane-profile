@@ -1,0 +1,20 @@
+#!/bin/bash
+set -euo pipefail
+
+old_profile=/config/.config/chromium
+new_profile=/config/ridepane-chromium
+
+if [ -d "$new_profile" ]; then
+  exit 0
+fi
+
+if [ -f "$old_profile/Local State" ]; then
+  staging=$(mktemp -d /config/.ridepane-chromium-XXXXXX)
+  cp -a "$old_profile"/. "$staging"/
+  rm -f "$staging"/Singleton*
+  chown abc:users "$staging"
+  mv "$staging" "$new_profile"
+else
+  mkdir -p "$new_profile"
+  chown abc:users "$new_profile"
+fi

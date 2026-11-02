@@ -6,10 +6,10 @@
   <meta name="theme-color" content="#08141c">
   <title>Ridepane · Passenger media</title>
   <link rel="icon" type="image/svg+xml" href="/brand/icon.svg">
-  <link rel="stylesheet" href="/style.css?v=0.6.2">
+  <link rel="stylesheet" href="/style.css?v=0.7.0">
   <script src="/vendor/jsmpeg.min.js" defer></script>
-  <script src="/app.js?v=0.6.2" defer></script>
-  <script src="/diagnostics.js?v=0.6.2" defer></script>
+  <script src="/app.js?v=0.7.0" defer></script>
+  <script src="/diagnostics.js?v=0.7.0" defer></script>
 </head>
 <body>
   <main>
@@ -35,7 +35,7 @@
       <form id="pair-form"><div id="phone-password-wrap"><label for="phone-password">Ridepane password</label><input id="phone-password" type="password" autocomplete="current-password"></div><button type="submit">Approve this screen</button></form>
       <p id="phone-message" class="muted" role="status"></p>
       <p id="phone-error" class="error" role="alert"></p>
-      <a id="desktop-phone-link" class="secondary desktop-phone-link hidden" href="/desktop/">Open full YouTube on this phone to sign in</a>
+      <div id="desktop-phone-actions" class="phone-app-actions hidden"><button id="phone-plex" class="secondary" type="button">Open Full Plex on this phone to sign in</button><button id="phone-youtube" class="secondary" type="button">Open Full YouTube on this phone to sign in</button></div>
     </section>
 
     <section id="app" class="hidden">
@@ -46,19 +46,23 @@
       <div id="browse" class="browse">
         <div class="intro">
           <p class="eyebrow">YOUR CABIN SCREEN</p>
-          <h1>What are we watching?</h1>
-          <p class="muted">Browse Plex, play a YouTube link, or open your full YouTube account.</p>
+          <h1>Your full media apps.</h1>
+          <p class="muted">Open the real Plex or YouTube site on the cabin screen.</p>
         </div>
         <nav class="tabs" aria-label="Media source">
-          <button id="plex-tab" class="tab active" type="button" aria-current="page">Plex library</button>
+          <button id="home-tab" class="tab active" type="button" aria-current="page">Full apps</button>
+          <button id="plex-tab" class="tab" type="button">Plex quick play</button>
           <button id="youtube-tab" class="tab" type="button">YouTube link</button>
-          <a id="desktop-tab" class="tab hidden" href="/desktop/" title="Open YouTube using the full browser window">Full YouTube ↗</a>
-          <button id="desktop-fallback" class="tab hidden" type="button" title="Try JPEG frames if Full YouTube is black on this browser">YouTube fallback ↗</button>
           <button id="diagnostics-tab" class="tab" type="button">Car checks</button>
         </nav>
-        <div class="quality-row"><label for="quality">Picture quality</label><select id="quality"><option value="balanced">Balanced · 540p / 30 fps</option><option value="high" selected>High · 720p / 30 fps</option><option value="maximum">Maximum · 1080p / 30 fps</option></select><span>Higher settings use more mobile data and Unraid CPU.</span></div>
-        <div class="sound-row"><label for="sound-mode">Sound</label><select id="sound-mode"><option value="separate">320 kbps MP3 · current</option><option value="combined">384 kbps MP2 · sync test</option></select><button id="sound-check" class="secondary" type="button">Check browser channels</button><span id="sound-capability" role="status">Both modes send stereo. Try the sync test if voices lag the picture.</span></div>
-        <section id="plex-panel" class="panel">
+        <section id="home-panel" class="panel full-apps" aria-label="Full media apps">
+          <article class="full-app-card"><p class="eyebrow">YOUR LIBRARY</p><h2>Full Plex</h2><p class="muted">Plex Home, Continue Watching, search, collections, and the familiar player.</p><div class="full-app-actions"><button id="full-plex" type="button">Open Full Plex ↗</button><button id="plex-fallback" class="secondary" type="button">Compatibility view</button></div></article>
+          <article class="full-app-card"><p class="eyebrow">YOUR ACCOUNT</p><h2>Full YouTube</h2><p class="muted">Your subscriptions, playlists, Likes, and recommendations.</p><div class="full-app-actions"><button id="full-youtube" type="button">Open Full YouTube ↗</button><button id="youtube-fallback" class="secondary" type="button">Compatibility view</button></div></article>
+          <p class="full-app-note muted">Sign in once using these buttons on your phone. The browser session stays on Unraid. Use Compatibility view if the car shows a black screen.</p>
+        </section>
+        <div id="quick-settings" class="hidden"><div class="quality-row"><label for="quality">Picture quality</label><select id="quality"><option value="balanced">Balanced · 540p / 30 fps</option><option value="high" selected>High · 720p / 30 fps</option><option value="maximum">Maximum · 1080p / 30 fps</option></select><span>Higher settings use more mobile data and Unraid CPU.</span></div>
+        <div class="sound-row"><label for="sound-mode">Sound</label><select id="sound-mode"><option value="separate">320 kbps MP3 · current</option><option value="combined">384 kbps MP2 · sync test</option></select><button id="sound-check" class="secondary" type="button">Check browser channels</button><span id="sound-capability" role="status">Both modes send stereo. Try the sync test if voices lag the picture.</span></div></div>
+        <section id="plex-panel" class="panel hidden">
           <div class="list-heading"><button id="back" class="text-button hidden" type="button">← Back</button><h2 id="list-title">Libraries</h2></div>
           <div id="plex-list" class="card-grid" aria-live="polite"></div>
           <div class="list-footer"><button id="more" class="secondary hidden" type="button">Load more</button></div>

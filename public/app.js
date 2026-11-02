@@ -1,5 +1,5 @@
 const $ = id => document.getElementById(id);
-const state = { mode: 'plex', history: [], page: 0, section: null, player: null, session: null, audioMode: 'separate', soundOn: false, delayContext: null, delayNode: null, combinedDelayNode: null, stopped: false, pair: null, pairTimer: null, phoneAuthed: false };
+const state = { mode: 'home', history: [], page: 0, section: null, player: null, session: null, audioMode: 'separate', soundOn: false, delayContext: null, delayNode: null, combinedDelayNode: null, stopped: false, pair: null, pairTimer: null, phoneAuthed: false };
 
 async function api(path, options = {}) {
   const response = await fetch(path, { ...options, headers: { 'Content-Type': 'application/json', ...(options.headers || {}) } });
@@ -15,9 +15,9 @@ function openApp() {
   state.pair = null;
   show($('login'), false); show($('pair-phone'), false); show($('app'), true);
   api('/api/me').then(me => {
-    show($('desktop-tab'), !!me.desktop);
-    show($('desktop-fallback'), !!me.desktop);
-  }).catch(() => {});
+    show($('home-tab'), !!me.desktop);
+    setTab(me.desktop ? 'home' : 'plex');
+  }).catch(() => setTab('plex'));
   loadSections();
 }
 async function startPairing() {
@@ -48,14 +48,16 @@ async function openPhonePair(code) {
   $('phone-code').textContent = code;
   state.phoneAuthed = await api('/api/me').then(() => true).catch(() => false);
   show($('phone-password-wrap'), !state.phoneAuthed);
-  if (state.phoneAuthed) api('/api/me').then(me => show($('desktop-phone-link'), !!me.desktop)).catch(() => {});
+  if (state.phoneAuthed) api('/api/me').then(me => show($('desktop-phone-actions'), !!me.desktop)).catch(() => {});
 }
 function setTab(mode) {
   state.mode = mode;
+  show($('home-panel'), mode === 'home');
+  show($('quick-settings'), mode === 'plex' || mode === 'youtube');
   show($('plex-panel'), mode === 'plex');
   show($('youtube-panel'), mode === 'youtube');
   show($('diagnostics-panel'), mode === 'diagnostics');
-  for (const name of ['plex', 'youtube', 'diagnostics']) {
+  for (const name of ['home', 'plex', 'youtube', 'diagnostics']) {
     $(`${name}-tab`).classList.toggle('active', mode === name);
     $(`${name}-tab`).setAttribute('aria-current', mode === name ? 'page' : 'false');
   }
@@ -130,6 +132,7 @@ async function browseChildren(item) {
   catch (err) { setError(err.message); }
 }
 async function goBack() {
+  if (!state.history.length) return loadSections();
   state.history.pop();
   if (state.history.length) {
     const last = state.history.at(-1);
@@ -263,9 +266,10 @@ $('pair-form').addEventListener('submit', async event => {
     show($('phone-password-wrap'), false);
     $('phone-message').textContent = 'Approved. The car screen will sign in automatically.';
     $('pair-form').querySelector('button').disabled = true;
-    api('/api/me').then(me => show($('desktop-phone-link'), !!me.desktop)).catch(() => {});
+    api('/api/me').then(me => show($('desktop-phone-actions'), !!me.desktop)).catch(() => {});
   } catch (err) { $('phone-message').textContent = ''; $('phone-error').textContent = err.message; }
 });
+$('home-tab').addEventListener('click', () => setTab('home'));
 $('plex-tab').addEventListener('click', () => setTab('plex'));
 $('youtube-tab').addEventListener('click', () => setTab('youtube'));
 $('diagnostics-tab').addEventListener('click', () => setTab('diagnostics'));
@@ -273,14 +277,22 @@ function desktopEncoderKey() {
   const desktop = new URL('/desktop/', location.href);
   return `${(desktop.origin + desktop.pathname).replace(/[^a-zA-Z0-9._-]/g, '_')}_encoder`;
 }
-$('desktop-tab').addEventListener('click', () => {
-  try { localStorage.removeItem(desktopEncoderKey()); } catch { /* continue with the server default */ }
-});
-$('desktop-fallback').addEventListener('click', () => {
-  try { localStorage.setItem(desktopEncoderKey(), 'jpeg'); }
-  catch { setError('This browser cannot save the fallback setting. Try Full YouTube instead.'); return; }
-  location.assign('/desktop/');
-});
+async function openFullApp(site, fallback = false, phone = false) {
+  const message = phone ? $('phone-error') : $('browse-error');
+  message.textContent = '';
+  try {
+    await api('/api/desktop/open', { method: 'POST', body: JSON.stringify({ site }) });
+    if (fallback) localStorage.setItem(desktopEncoderKey(), 'jpeg');
+    else localStorage.removeItem(desktopEncoderKey());
+    location.assign('/desktop/');
+  } catch (err) { message.textContent = err.message; }
+}
+$('full-plex').addEventListener('click', () => openFullApp('plex'));
+$('plex-fallback').addEventListener('click', () => openFullApp('plex', true));
+$('full-youtube').addEventListener('click', () => openFullApp('youtube'));
+$('youtube-fallback').addEventListener('click', () => openFullApp('youtube', true));
+$('phone-plex').addEventListener('click', () => openFullApp('plex', false, true));
+$('phone-youtube').addEventListener('click', () => openFullApp('youtube', false, true));
 $('sound-check').addEventListener('click', async () => {
   const result = $('sound-capability');
   const AudioContextClass = window.AudioContext || window.webkitAudioContext;

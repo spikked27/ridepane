@@ -52,8 +52,13 @@ test('HTTP flow authenticates, browses Plex, and creates bounded playback sessio
     assert.match(await response.text(), /Ridepane icon/);
     response = await fetch(base + '/');
     assert.equal(response.status, 200);
-    assert.match(await response.text(), /id="audio-delay"/);
+    const home = await response.text();
+    assert.match(home, /id="audio-delay"/);
+    assert.match(home, /id="full-plex"/);
+    assert.match(home, /brand\/ridepane-dark\.svg/);
     response = await fetch(base + '/desktop/');
+    assert.equal(response.status, 401);
+    response = await fetch(base + '/api/desktop/open', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ site: 'plex' }) });
     assert.equal(response.status, 401);
     response = await fetch(base + '/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password: 'testing-password' }) });
     assert.equal(response.status, 200);
@@ -64,6 +69,8 @@ test('HTTP flow authenticates, browses Plex, and creates bounded playback sessio
     assert.equal(await response.text(), 'Remote browser');
     response = await fetch(base + '/api/me', { headers });
     assert.equal((await response.json()).desktop, true);
+    response = await fetch(base + '/api/desktop/open', { method: 'POST', headers: { ...headers, 'Content-Type': 'application/json' }, body: JSON.stringify({ site: 'unapproved' }) });
+    assert.equal(response.status, 400);
     response = await fetch(base + '/diagnostics.js');
     assert.equal(response.status, 200);
     assert.match(await response.text(), /ridepane-car-check-v1/);

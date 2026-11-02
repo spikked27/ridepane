@@ -13,28 +13,27 @@
 <body>
   <header class="site-header wrap">
     <a href="#top" aria-label="Ridepane home"><img src="./assets/ridepane-dark.svg" alt="Ridepane"></a>
-    <nav><a href="#install">Install</a><a href="#full-youtube">Full YouTube</a><a href="https://github.com/spikked27/ridepane/blob/main/TESTING.md">Car test guide ↗</a><a href="https://github.com/spikked27/ridepane">GitHub ↗</a></nav>
+    <nav><a href="#install">Install</a><a href="#full-apps">Full Plex and YouTube</a><a href="https://github.com/spikked27/ridepane/blob/main/TESTING.md">Car test guide ↗</a><a href="https://github.com/spikked27/ridepane">GitHub ↗</a></nav>
   </header>
   <main id="top">
     <section class="hero wrap">
       <div class="hero-copy">
         <p class="eyebrow">YOUR MEDIA, YOUR SERVER, THEIR SEAT</p>
         <h1>A better passenger screen for the road.</h1>
-        <p class="lead">One Ridepane container brings your Plex library and the real signed-in YouTube website to a private page hosted on Unraid. Scan a code with your phone to sign the car in.</p>
+        <p class="lead">One Ridepane container brings the full Plex and YouTube websites to a private passenger page hosted on Unraid. Scan a code with your phone to sign the car in.</p>
         <div class="actions"><a class="button primary" href="#install">Install on Unraid</a><a class="button outline" href="https://github.com/spikked27/ridepane">View source</a></div>
         <p class="fine">The driver must keep attention on the road. Ridepane is an independent project, not affiliated with Tesla, Plex, or YouTube.</p>
       </div>
       <div class="visual" aria-label="Ridepane interface preview">
         <div class="visual-top"><span class="visual-icon"><img src="./assets/icon.svg" alt=""></span><strong>ridepane</strong><span class="visual-label">FOR PASSENGERS</span></div>
-        <p class="eyebrow">YOUR CABIN SCREEN</p><h2>What are we watching?</h2><p>Choose a title from Plex or paste a YouTube link.</p>
-        <div class="visual-tabs"><b>Plex library</b><span>YouTube link</span><span>Full YouTube</span></div>
-        <div class="visual-quality">Picture quality <strong>High · 720p / 30 fps ▾</strong></div>
-        <div class="visual-cards"><div><span>▶</span><strong>Movies</strong><small>Plex library</small></div><div><span>▣</span><strong>TV Shows</strong><small>Plex library</small></div></div>
+        <p class="eyebrow">YOUR CABIN SCREEN</p><h2>Your full media apps.</h2><p>Browse the familiar Plex and YouTube websites.</p>
+        <div class="visual-tabs"><b>Full apps</b><span>Plex quick play</span><span>Car checks</span></div>
+        <div class="visual-cards"><div><span>▶</span><strong>Full Plex</strong><small>Home · Continue Watching</small></div><div><span>▣</span><strong>Full YouTube</strong><small>Playlists · subscriptions</small></div></div>
       </div>
     </section>
     <section class="features wrap">
       <article><span>01</span><h3>Runs on your Unraid</h3><p>Your app password and Plex token stay on your server. The car only receives its own sign-in cookie.</p></article>
-      <article><span>02</span><h3>Picture quality you can choose</h3><p>Start at 720p/30 fps. Try 1080p/30 fps if your server, connection, and Tesla browser can keep up.</p></article>
+      <article><span>02</span><h3>Your familiar apps</h3><p>Open Plex Web or signed-in YouTube in a remote browser. Quick play offers separate 720p and 1080p options.</p></article>
       <article><span>03</span><h3>Phone-first sign-in</h3><p>Scan the QR code on the car screen, enter the password on your phone, and approve that screen.</p></article>
     </section>
     <section id="install" class="section wrap">
@@ -54,18 +53,18 @@
       </div>
       <p class="note">The Docker image is published from this project's GitHub Actions workflow. If the image is unavailable during first publication, the repository also includes a local build override: <code>docker compose -f compose.yaml -f compose.build.yaml up -d --build</code>.</p>
     </section>
-    <section id="full-youtube" class="section wrap faq">
-      <p class="eyebrow">OPTIONAL · EXPERIMENTAL</p><h2>Your actual YouTube account on the car screen.</h2>
-      <p>Full YouTube runs Chromium on Unraid and streams its screen to the car. You can browse the same YouTube website you use on your phone, including playlists, Likes, Watch Later, and subscriptions. On the phone pairing page, open the Full YouTube sign-in link and sign in there once. The browser profile stays on Unraid, so the car does not need your Google password. The Full YouTube entry uses the whole available Tesla browser viewport; the stream's side menu also has a fullscreen control where the client browser permits it.</p>
-      <p>The app and Chromium now run in one container. For Docker Compose, run <code>docker compose up -d</code>. Only the Ridepane app port is published; it protects the internal browser with the same sign-in and proxies it through your existing HTTPS and WebSocket setup. See the <a href="https://github.com/spikked27/ridepane#full-youtube-experimental">README</a> for Unraid Docker tab setup, browser profile persistence, and optional GPU access.</p>
-      <p>The remote screen defaults to H.264 at 30 fps, adaptive bitrate up to 8 Mbps, and 320 kbps stereo Opus. Resolution follows the browser viewport. It uses canvas rendering and Web Audio. If the screen is black in an older browser, Ridepane's YouTube fallback entry asks Selkies to use JPEG frames on that browser. Tesla browser compatibility, Google sign-in, picture quality, and audio need an in-car test. This mode has different quality controls from Ridepane's Plex and YouTube link player.</p>
+    <section id="full-apps" class="section wrap faq">
+      <p class="eyebrow">FULL MEDIA APPS · EXPERIMENTAL</p><h2>The Plex and YouTube interfaces you know.</h2>
+      <p>Full Plex opens the hosted Plex Web app, with Home, Continue Watching, search, collections, and Plex's player. Full YouTube opens your subscriptions, playlists, Likes, Watch Later, and recommendations. Chromium runs on Unraid and streams its screen to the car. On the phone pairing page, open either app on your phone to sign in once. Both sites keep their sign-in in the persistent browser profile, so you do not need to type account passwords on the car screen.</p>
+      <p>The app and Chromium run in one container. Only the Ridepane app port is published; it protects the internal browser with the same sign-in and proxies it through your HTTPS and WebSocket setup. The two sites share one remote browser. See the <a href="https://github.com/spikked27/ridepane#full-plex-and-youtube-experimental">README</a> for profile persistence and optional GPU access.</p>
+      <p>The remote screen defaults to H.264 at 30 fps, adaptive bitrate up to 8 Mbps, and 320 kbps stereo Opus. Resolution follows the browser viewport. If either full app appears black on the Tesla, tap its Compatibility view for JPEG frames. Picture, audio, and fullscreen behavior need an in-car test. Plex quick play and YouTube link remain available if the full browser stream does not work.</p>
     </section>
     <section class="section wrap faq"><p class="eyebrow">IN-CAR CHECKS</p><h2>See what your car can actually do.</h2><p>Ridepane's <strong>Car checks</strong> panel measures the connection from the Tesla browser to your Unraid server and tests whether the browser retains a small cache after reopening. It reports video, fullscreen, storage, and audio capabilities, and can play a quiet channel-by-channel test for stereo, 5.1, or 7.1 speaker routing. The cache test uses generated bytes, not Plex media; current Ridepane playback sends stereo.</p><p><a href="https://github.com/spikked27/ridepane/blob/main/TESTING.md">Open the short car test guide ↗</a></p></section>
     <section id="pair" class="section pair-section wrap">
       <div><p class="eyebrow">NO PASSWORD ON THE CAR</p><h2>Pair from your phone.</h2><p>The car shows a QR code and a short pairing code. Scan it with your phone, sign in to your private Ridepane address, and tap <strong>Approve this screen</strong>. The car signs in automatically and stays signed in across container restarts.</p><p>Use a valid HTTPS address for access outside your LAN. Your reverse proxy must forward WebSocket connections for video playback.</p></div>
       <div class="pair-demo"><div class="qr-art" aria-hidden="true"><span>▦</span></div><div><p class="eyebrow">PAIR THIS SCREEN</p><strong>12345678</strong><small>Scan with your phone<br>Approve this screen</small></div></div>
     </section>
-    <section class="section wrap faq"><p class="eyebrow">GOOD TO KNOW</p><h2>Quality and compatibility</h2><p>Ridepane re-encodes video for canvas playback, so it does not preserve the original video bit for bit. High (720p/30 fps) is the default; Maximum (1080p/30 fps) needs more CPU and mobile bandwidth. Audio is 320 kbps stereo MP3 at 48 kHz. The app can report how many output channels the car browser exposes; discrete 5.1 or 7.1 requires an in-car capability check. Real Tesla performance depends on the car and software version. YouTube playback is experimental because its stream formats can change.</p><p>Tesla supports video on equipped rear screens while driving. Ridepane's front-screen rendering is an unofficial passenger workaround. The driver should never watch or operate it in motion.</p></section>
+    <section class="section wrap faq"><p class="eyebrow">GOOD TO KNOW</p><h2>Quality and compatibility</h2><p>The full apps stream a remote browser screen, so they do not preserve original media bit for bit. Plex quick play and YouTube link re-encode to canvas video; High (720p/30 fps) is the default and Maximum (1080p/30 fps) needs more CPU and mobile bandwidth. Quick-play audio is stereo, with an adjustable delay if sound leads picture. The car browser's reported output limit was two channels in testing. Real performance depends on the car, connection, and software version.</p><p>Tesla supports video on equipped rear screens while driving. Ridepane's front-screen rendering is an unofficial passenger workaround. The driver should never watch or operate it in motion.</p></section>
   </main>
   <footer class="wrap"><img src="./assets/ridepane-dark.svg" alt="Ridepane"><span>Private passenger media, hosted by you.</span><a href="https://github.com/spikked27/ridepane">Source and support ↗</a></footer>
 </body>
