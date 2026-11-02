@@ -69,7 +69,9 @@ test('HTTP flow authenticates, browses Plex, and creates bounded playback sessio
     response = await fetch(base + '/desktop/', { headers });
     assert.equal(response.status, 200);
     const desktopPage = await response.text();
-    assert.match(desktopPage, /<script src="\/desktop\/ridepane-touch\.js"><\/script><script type="module"/);
+    assert.match(desktopPage, /<script data-ridepane-touch="0\.7\.4">/);
+    assert.match(desktopPage, /mouseGesture/);
+    assert.match(desktopPage, /<\/script><script type="module"/);
     assert.match(desktopPage, /Remote browser/);
     response = await fetch(base + '/desktop/ridepane-touch.js');
     assert.equal(response.status, 401);

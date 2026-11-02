@@ -101,7 +101,8 @@ function proxyDesktop(req, res) {
           chunks.push(chunk);
         }
         const html = Buffer.concat(chunks).toString('utf8');
-        const script = '<script src="/desktop/ridepane-touch.js"></script>';
+        const source = await fs.readFile(path.join(root, 'public', 'desktop-touch.js'), 'utf8');
+        const script = `<script data-ridepane-touch="0.7.4">${source.replaceAll('</script', '<\\/script')}</script>`;
         if (!html.includes('<script type="module"')) throw new Error('Full browser page format changed.');
         const page = Buffer.from(html.replace('<script type="module"', `${script}<script type="module"`));
         const out = { ...response.headers, 'content-length': page.length, 'cache-control': 'no-store' };

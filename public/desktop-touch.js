@@ -22,10 +22,13 @@
     navigator.virtualKeyboard?.hide?.();
   }
 
-  document.addEventListener('DOMContentLoaded', () => {
+  let controlsMounted = false;
+  function mountControls() {
+    if (controlsMounted) return;
+    controlsMounted = true;
     const controls = document.createElement('div');
     controls.id = 'ridepane-touch-controls';
-    controls.style.cssText = 'position:fixed;top:8px;right:8px;z-index:2147483647;display:flex;gap:6px;pointer-events:auto';
+    controls.style.cssText = 'position:absolute;top:8px;right:8px;z-index:2147483647;display:flex;gap:6px;padding:4px;background:#142b36;border:1px solid #76bfc4;border-radius:10px;pointer-events:auto';
     for (const [label, action] of [
       ['⌨ Keyboard', () => {
         keyboardRequested = true;
@@ -41,8 +44,19 @@
       button.addEventListener('click', action);
       controls.append(button);
     }
-    document.body.append(controls);
-  });
+    const stream = document.querySelector?.('.video-container');
+    (stream || document.body).append(controls);
+    hideKeyboard();
+    if (typeof MutationObserver !== 'undefined') {
+      const observer = new MutationObserver(() => {
+        const current = document.querySelector('.video-container');
+        if (current && controls.parentElement !== current) current.append(controls);
+      });
+      observer.observe(document.body, { childList: true, subtree: true });
+    }
+  }
+  document.addEventListener('DOMContentLoaded', mountControls, { once: true });
+  if (document.readyState === 'interactive' || document.readyState === 'complete') mountControls();
 
   const isStream = target => target instanceof Element &&
     !!target.closest('#overlayInput, canvas, video');
