@@ -273,23 +273,49 @@ $('home-tab').addEventListener('click', () => setTab('home'));
 $('plex-tab').addEventListener('click', () => setTab('plex'));
 $('youtube-tab').addEventListener('click', () => setTab('youtube'));
 $('diagnostics-tab').addEventListener('click', () => setTab('diagnostics'));
-function desktopEncoderKey() {
+function desktopSettingKey(name) {
   const desktop = new URL('/desktop/', location.href);
-  return `${(desktop.origin + desktop.pathname).replace(/[^a-zA-Z0-9._-]/g, '_')}_encoder`;
+  return `${(desktop.origin + desktop.pathname).replace(/[^a-zA-Z0-9._-]/g, '_')}_${name}`;
 }
-async function openFullApp(site, videoMode = 'jpeg', phone = false) {
+const cellularSettings = { video_bitrate: '4000', framerate: '24', manual_width: '928', manual_height: '720' };
+function desktopQuality(cellular) {
+  const backupKey = desktopSettingKey('ridepane_quality_backup');
+  if (cellular) {
+    if (!localStorage.getItem(backupKey)) {
+      const saved = Object.fromEntries(Object.keys(cellularSettings).map(name => [name, localStorage.getItem(desktopSettingKey(name))]));
+      localStorage.setItem(backupKey, JSON.stringify(saved));
+    }
+    for (const [name, value] of Object.entries(cellularSettings)) localStorage.setItem(desktopSettingKey(name), value);
+  } else {
+    const backup = localStorage.getItem(backupKey);
+    if (!backup) return;
+    try {
+      const saved = JSON.parse(backup);
+      for (const name of Object.keys(cellularSettings)) {
+        if (saved[name] == null) localStorage.removeItem(desktopSettingKey(name));
+        else localStorage.setItem(desktopSettingKey(name), saved[name]);
+      }
+    } catch {
+      for (const name of Object.keys(cellularSettings)) localStorage.removeItem(desktopSettingKey(name));
+    } finally { localStorage.removeItem(backupKey); }
+  }
+}
+async function openFullApp(site, videoMode = 'jpeg', phone = false, cellular = false) {
   const message = phone ? $('phone-error') : $('browse-error');
   message.textContent = '';
   try {
     await api('/api/desktop/open', { method: 'POST', body: JSON.stringify({ site }) });
-    if (videoMode === 'jpeg') localStorage.setItem(desktopEncoderKey(), 'jpeg');
-    else localStorage.removeItem(desktopEncoderKey());
-    location.assign(`/desktop/?ridepane=0.7.7&open=${Date.now()}`);
+    desktopQuality(cellular);
+    if (videoMode === 'jpeg') localStorage.setItem(desktopSettingKey('encoder'), 'jpeg');
+    else localStorage.removeItem(desktopSettingKey('encoder'));
+    location.assign(`/desktop/?ridepane=0.7.8&open=${Date.now()}`);
   } catch (err) { message.textContent = err.message; }
 }
 $('full-plex').addEventListener('click', () => openFullApp('plex'));
+$('plex-cellular').addEventListener('click', () => openFullApp('plex', 'jpeg', false, true));
 $('plex-h264').addEventListener('click', () => openFullApp('plex', 'h264'));
 $('full-youtube').addEventListener('click', () => openFullApp('youtube'));
+$('youtube-cellular').addEventListener('click', () => openFullApp('youtube', 'jpeg', false, true));
 $('youtube-h264').addEventListener('click', () => openFullApp('youtube', 'h264'));
 $('phone-plex').addEventListener('click', () => openFullApp('plex', 'h264', true));
 $('phone-youtube').addEventListener('click', () => openFullApp('youtube', 'h264', true));
