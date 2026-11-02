@@ -87,7 +87,32 @@ function desktopTarget(req) {
   return new URL(url.pathname + url.search, desktopBase);
 }
 function proxyDesktop(req, res) {
-  const upstream = http.request(desktopTarget(req), { method: req.method, headers: desktopHeaders(req) }, response => {
+  const injectTouch = req.method === 'GET' && new URL(req.url, 'http://localhost').pathname === '/desktop/';
+  const headers = desktopHeaders(req);
+  if (injectTouch) headers['accept-encoding'] = 'identity';
+  const upstream = http.request(desktopTarget(req), { method: req.method, headers }, response => {
+    if (injectTouch && response.statusCode === 200 && !response.headers['content-encoding']) {
+      void (async () => {
+        const chunks = [];
+        let size = 0;
+        for await (const chunk of response) {
+          size += chunk.length;
+          if (size > 1024 * 1024) throw new Error('Full browser page is too large.');
+          chunks.push(chunk);
+        }
+        const html = Buffer.concat(chunks).toString('utf8');
+        const script = '<script src="/desktop/ridepane-touch.js"></script>';
+        if (!html.includes('<script type="module"')) throw new Error('Full browser page format changed.');
+        const page = Buffer.from(html.replace('<script type="module"', `${script}<script type="module"`));
+        const out = { ...response.headers, 'content-length': page.length, 'cache-control': 'no-store' };
+        delete out.etag;
+        delete out['accept-ranges'];
+        delete out['transfer-encoding'];
+        res.writeHead(200, out);
+        res.end(page);
+      })().catch(() => { if (!res.headersSent) error(res, 502, 'Full browser page is unavailable.'); else res.destroy(); });
+      return;
+    }
     res.writeHead(response.statusCode, response.headers);
     response.pipe(res);
   });
@@ -242,6 +267,11 @@ const server = http.createServer(async (req, res) => {
       }
       if (req.method === 'GET' && url.pathname === '/desktop/manifest.json') {
         return json(res, 200, { name: 'Ridepane Full Apps', short_name: 'Ridepane', start_url: '/desktop/', display: 'standalone', icons: [{ src: '/desktop/icon.png', sizes: '256x256', type: 'image/png' }, { src: '/desktop/icon-512.png', sizes: '512x512', type: 'image/png' }] });
+      }
+      if (req.method === 'GET' && url.pathname === '/desktop/ridepane-touch.js') {
+        const script = await fs.readFile(path.join(root, 'public', 'desktop-touch.js'));
+        res.writeHead(200, { 'Content-Type': 'text/javascript; charset=utf-8', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' });
+        return res.end(script);
       }
       return proxyDesktop(req, res);
     }

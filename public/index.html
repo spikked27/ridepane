@@ -6,10 +6,10 @@
   <meta name="theme-color" content="#08141c">
   <title>Ridepane · Passenger media</title>
   <link rel="icon" type="image/svg+xml" href="/brand/icon.svg">
-  <link rel="stylesheet" href="/style.css?v=0.7.0">
+  <link rel="stylesheet" href="/style.css?v=0.7.1">
   <script src="/vendor/jsmpeg.min.js" defer></script>
-  <script src="/app.js?v=0.7.0" defer></script>
-  <script src="/diagnostics.js?v=0.7.0" defer></script>
+  <script src="/app.js?v=0.7.1" defer></script>
+  <script src="/diagnostics.js?v=0.7.1" defer></script>
 </head>
 <body>
   <main>
@@ -56,9 +56,9 @@
           <button id="diagnostics-tab" class="tab" type="button">Car checks</button>
         </nav>
         <section id="home-panel" class="panel full-apps" aria-label="Full media apps">
-          <article class="full-app-card"><p class="eyebrow">YOUR LIBRARY</p><h2>Full Plex</h2><p class="muted">Plex Home, Continue Watching, search, collections, and the familiar player.</p><div class="full-app-actions"><button id="full-plex" type="button">Open Full Plex ↗</button><button id="plex-fallback" class="secondary" type="button">Compatibility view</button></div></article>
-          <article class="full-app-card"><p class="eyebrow">YOUR ACCOUNT</p><h2>Full YouTube</h2><p class="muted">Your subscriptions, playlists, Likes, and recommendations.</p><div class="full-app-actions"><button id="full-youtube" type="button">Open Full YouTube ↗</button><button id="youtube-fallback" class="secondary" type="button">Compatibility view</button></div></article>
-          <p class="full-app-note muted">Sign in once using these buttons on your phone. The browser session stays on Unraid. Use Compatibility view if the car shows a black screen.</p>
+          <article class="full-app-card"><p class="eyebrow">YOUR LIBRARY</p><h2>Full Plex</h2><p class="muted">Plex Home, Continue Watching, search, collections, and the familiar player.</p><div class="full-app-actions"><button id="full-plex" type="button">Open Full Plex ↗</button><button id="plex-h264" class="secondary" type="button">Try H.264</button></div></article>
+          <article class="full-app-card"><p class="eyebrow">YOUR ACCOUNT</p><h2>Full YouTube</h2><p class="muted">Your subscriptions, playlists, Likes, and recommendations.</p><div class="full-app-actions"><button id="full-youtube" type="button">Open Full YouTube ↗</button><button id="youtube-h264" class="secondary" type="button">Try H.264</button></div></article>
+          <p class="full-app-note muted">Full apps now start with the picture mode that worked on the Tesla. Swipe with one finger to scroll. Sign in once from your phone; the browser session stays on Unraid.</p>
         </section>
         <div id="quick-settings" class="hidden"><div class="quality-row"><label for="quality">Picture quality</label><select id="quality"><option value="balanced">Balanced · 540p / 30 fps</option><option value="high" selected>High · 720p / 30 fps</option><option value="maximum">Maximum · 1080p / 30 fps</option></select><span>Higher settings use more mobile data and Unraid CPU.</span></div>
         <div class="sound-row"><label for="sound-mode">Sound</label><select id="sound-mode"><option value="separate">320 kbps MP3 · current</option><option value="combined">384 kbps MP2 · sync test</option></select><button id="sound-check" class="secondary" type="button">Check browser channels</button><span id="sound-capability" role="status">Both modes send stereo. Try the sync test if voices lag the picture.</span></div></div>

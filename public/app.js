@@ -277,22 +277,22 @@ function desktopEncoderKey() {
   const desktop = new URL('/desktop/', location.href);
   return `${(desktop.origin + desktop.pathname).replace(/[^a-zA-Z0-9._-]/g, '_')}_encoder`;
 }
-async function openFullApp(site, fallback = false, phone = false) {
+async function openFullApp(site, videoMode = 'jpeg', phone = false) {
   const message = phone ? $('phone-error') : $('browse-error');
   message.textContent = '';
   try {
     await api('/api/desktop/open', { method: 'POST', body: JSON.stringify({ site }) });
-    if (fallback) localStorage.setItem(desktopEncoderKey(), 'jpeg');
+    if (videoMode === 'jpeg') localStorage.setItem(desktopEncoderKey(), 'jpeg');
     else localStorage.removeItem(desktopEncoderKey());
     location.assign('/desktop/');
   } catch (err) { message.textContent = err.message; }
 }
 $('full-plex').addEventListener('click', () => openFullApp('plex'));
-$('plex-fallback').addEventListener('click', () => openFullApp('plex', true));
+$('plex-h264').addEventListener('click', () => openFullApp('plex', 'h264'));
 $('full-youtube').addEventListener('click', () => openFullApp('youtube'));
-$('youtube-fallback').addEventListener('click', () => openFullApp('youtube', true));
-$('phone-plex').addEventListener('click', () => openFullApp('plex', false, true));
-$('phone-youtube').addEventListener('click', () => openFullApp('youtube', false, true));
+$('youtube-h264').addEventListener('click', () => openFullApp('youtube', 'h264'));
+$('phone-plex').addEventListener('click', () => openFullApp('plex', 'h264', true));
+$('phone-youtube').addEventListener('click', () => openFullApp('youtube', 'h264', true));
 $('sound-check').addEventListener('click', async () => {
   const result = $('sound-capability');
   const AudioContextClass = window.AudioContext || window.webkitAudioContext;

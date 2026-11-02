@@ -16,7 +16,9 @@ test('HTTP flow authenticates, browses Plex, and creates bounded playback sessio
   const desktop = http.createServer((req, res) => {
     assert.equal(req.url, '/desktop/');
     assert.equal(req.headers.cookie || '', '');
-    res.end('Remote browser');
+    assert.equal(req.headers['accept-encoding'], 'identity');
+    res.setHeader('Content-Type', 'text/html');
+    res.end('<html><head><script type="module" src="./app.js"></script></head><body>Remote browser</body></html>');
   });
   desktop.on('upgrade', (req, socket) => {
     assert.equal(req.url, '/desktop/');
@@ -66,7 +68,14 @@ test('HTTP flow authenticates, browses Plex, and creates bounded playback sessio
     const headers = { Cookie: cookie };
     response = await fetch(base + '/desktop/', { headers });
     assert.equal(response.status, 200);
-    assert.equal(await response.text(), 'Remote browser');
+    const desktopPage = await response.text();
+    assert.match(desktopPage, /<script src="\/desktop\/ridepane-touch\.js"><\/script><script type="module"/);
+    assert.match(desktopPage, /Remote browser/);
+    response = await fetch(base + '/desktop/ridepane-touch.js');
+    assert.equal(response.status, 401);
+    response = await fetch(base + '/desktop/ridepane-touch.js', { headers });
+    assert.equal(response.status, 200);
+    assert.match(await response.text(), /touchmove/);
     response = await fetch(base + '/api/me', { headers });
     assert.equal((await response.json()).desktop, true);
     response = await fetch(base + '/api/desktop/open', { method: 'POST', headers: { ...headers, 'Content-Type': 'application/json' }, body: JSON.stringify({ site: 'unapproved' }) });
