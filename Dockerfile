@@ -38,4 +38,4 @@ ENV NODE_ENV=production \
     CHROME_CLI="--kiosk --remote-debugging-port=9222 --user-data-dir=/config/ridepane-chromium https://www.youtube.com"
 
 EXPOSE 8080
-HEALTHCHECK --interval=30s --timeout=5s --start-period=90s --retries=3 CMD node -e "Promise.all([fetch('http://127.0.0.1:8080/healthz'), fetch('http://127.0.0.1:3000/desktop/')]).then(responses => process.exit(responses.every(response => response.ok) ? 0 : 1)).catch(() => process.exit(1))"
+HEALTHCHECK --interval=30s --timeout=5s --start-period=90s --retries=3 CMD node -e "Promise.all([fetch('http://127.0.0.1:8080/healthz'), fetch('http://127.0.0.1:3000/desktop/'), fetch('http://127.0.0.1:9222/json/list')]).then(async responses => process.exit(responses.every(response => response.ok) && (await responses[2].json()).some(target => target.type === 'page') ? 0 : 1)).catch(() => process.exit(1))"

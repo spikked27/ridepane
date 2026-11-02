@@ -4,17 +4,18 @@ set -euo pipefail
 old_profile=/config/.config/chromium
 new_profile=/config/ridepane-chromium
 
-if [ -d "$new_profile" ]; then
-  exit 0
+if [ ! -d "$new_profile" ]; then
+  if [ -f "$old_profile/Local State" ]; then
+    staging=$(mktemp -d /config/.ridepane-chromium-XXXXXX)
+    cp -a "$old_profile"/. "$staging"/
+    chown abc:users "$staging"
+    mv "$staging" "$new_profile"
+  else
+    mkdir -p "$new_profile"
+    chown abc:users "$new_profile"
+  fi
 fi
 
-if [ -f "$old_profile/Local State" ]; then
-  staging=$(mktemp -d /config/.ridepane-chromium-XXXXXX)
-  cp -a "$old_profile"/. "$staging"/
-  rm -f "$staging"/Singleton*
-  chown abc:users "$staging"
-  mv "$staging" "$new_profile"
-else
-  mkdir -p "$new_profile"
-  chown abc:users "$new_profile"
-fi
+# The browser has stopped when custom init runs. Its lock links point into the
+# old container's /tmp and can block Chromium after an image update or restart.
+rm -f "$new_profile/SingletonCookie" "$new_profile/SingletonLock" "$new_profile/SingletonSocket"
