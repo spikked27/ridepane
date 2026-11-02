@@ -1,6 +1,10 @@
 // Loaded before Selkies so touch input can behave like a phone on the car screen.
 (() => {
-  if (!('ontouchstart' in window) && navigator.maxTouchPoints < 1) return;
+  // Tesla's Chromium can deliver touchscreen gestures as mouse events while
+  // reporting no touch points. The narrow viewport still needs touch controls.
+  const hasTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+  const narrowScreen = Math.min(window.innerWidth, window.screen?.width ?? Infinity) < 1200;
+  if (!hasTouch && !narrowScreen) return;
 
   let keyboardRequested = false;
   const nativeFocus = HTMLElement.prototype.focus;
@@ -44,6 +48,8 @@
     !!target.closest('#overlayInput, canvas, video');
   let gesture = null;
   let ignoreMouseUntil = 0;
+  let mouseGesture = null;
+  let ignoreClickUntil = 0;
   const stop = event => { event.preventDefault(); event.stopImmediatePropagation(); };
 
   window.addEventListener('pointerdown', event => {
@@ -58,6 +64,7 @@
   window.addEventListener('touchstart', event => {
     if (!isStream(event.target)) return;
     stop(event);
+    ignoreMouseUntil = 0;
     hideKeyboard();
     if (event.touches.length !== 1) { gesture = null; return; }
     const touch = event.touches[0];
@@ -106,9 +113,52 @@
   }, { capture: true, passive: false });
 
   // Some touch browsers emit a mouse click after touchend despite preventDefault.
-  for (const name of ['mousedown', 'mouseup', 'click']) {
-    window.addEventListener(name, event => {
-      if (event.isTrusted && Date.now() < ignoreMouseUntil && isStream(event.target)) stop(event);
-    }, { capture: true });
-  }
+  window.addEventListener('mousedown', event => {
+    if (!event.isTrusted || event.button !== 0 || !isStream(event.target)) return;
+    if (Date.now() < ignoreMouseUntil) { stop(event); return; }
+    stop(event);
+    hideKeyboard();
+    mouseGesture = { target: document.getElementById('overlayInput') || event.target,
+      x: event.clientX, y: event.clientY, lastX: event.clientX, lastY: event.clientY, moved: false };
+  }, { capture: true });
+
+  window.addEventListener('mousemove', event => {
+    if (!event.isTrusted || !mouseGesture) return;
+    stop(event);
+    const dx = event.clientX - mouseGesture.x;
+    const dy = event.clientY - mouseGesture.y;
+    if (Math.hypot(dx, dy) > 9) mouseGesture.moved = true;
+    if (mouseGesture.moved) {
+      mouseGesture.target.dispatchEvent(new WheelEvent('wheel', {
+        bubbles: true, cancelable: true, deltaMode: 0,
+        deltaX: (mouseGesture.lastX - event.clientX) * 1.5,
+        deltaY: (mouseGesture.lastY - event.clientY) * 1.5,
+        clientX: event.clientX, clientY: event.clientY
+      }));
+    }
+    mouseGesture.lastX = event.clientX;
+    mouseGesture.lastY = event.clientY;
+  }, { capture: true });
+
+  window.addEventListener('mouseup', event => {
+    if (!event.isTrusted) return;
+    if (!mouseGesture) {
+      if (Date.now() < ignoreMouseUntil && isStream(event.target)) stop(event);
+      return;
+    }
+    stop(event);
+    const finished = mouseGesture;
+    mouseGesture = null;
+    ignoreClickUntil = Date.now() + 250;
+    if (finished.moved) return;
+    const options = { bubbles: true, cancelable: true, button: 0,
+      clientX: finished.x, clientY: finished.y };
+    finished.target.dispatchEvent(new MouseEvent('mousedown', { ...options, buttons: 1 }));
+    window.dispatchEvent(new MouseEvent('mouseup', { ...options, buttons: 0 }));
+  }, { capture: true });
+
+  window.addEventListener('click', event => {
+    if (event.isTrusted && isStream(event.target) &&
+        (Date.now() < ignoreMouseUntil || Date.now() < ignoreClickUntil)) stop(event);
+  }, { capture: true });
 })();
